@@ -11,6 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import RoleSelector from "../components/RoleSelector";
+import SocialButton from "../components/SocialButton";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -28,6 +30,10 @@ const Login = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Sign in</Text>
+
+      <Text style={styles.subheading}>Sign in as:</Text>
+      <RoleSelector />
+
       <TextInput
         placeholder="Email Address"
         style={styles.input}
@@ -41,12 +47,24 @@ const Login = () => {
         value={password}
         onChangeText={setPassword}
       />
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Continue</Text>
+
+      <TouchableOpacity style={styles.continueButton} onPress={handleLogin}>
+        <Text style={styles.continueText}>Continue</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push("/create-account")}>
-        <Text style={styles.linkText}>Don't have an account? Create One</Text>
-      </TouchableOpacity>
+
+      <Text style={styles.bottomText}>
+        Don’t have an Account?{" "}
+        <Text
+          style={styles.linkText}
+          onPress={() => router.push("/create-account")}
+        >
+          Create One
+        </Text>
+      </Text>
+
+      <SocialButton icon="apple" label="Continue With Apple" />
+      <SocialButton icon="google" label="Continue With Google" />
+      <SocialButton icon="facebook" label="Continue With Facebook" />
     </View>
   );
 };
@@ -54,26 +72,51 @@ const Login = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 24,
     justifyContent: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "white",
   },
-  heading: { fontSize: 24, marginBottom: 20, fontWeight: "bold" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+  heading: {
+    fontSize: 28,
+    fontWeight: "bold",
     marginBottom: 10,
-    padding: 12,
-    borderRadius: 10,
+    fontFamily: "BalooTammudu2-SemiBold",
   },
-  button: {
-    backgroundColor: "#F4B831",
-    padding: 15,
-    borderRadius: 10,
+  subheading: {
+    fontSize: 16,
+    marginBottom: 10,
+    fontFamily: "ABeeZee-Regular",
+  },
+  input: {
+    backgroundColor: "#F4F4F4",
+    padding: 14,
+    borderRadius: 8,
+    marginVertical: 8,
+    fontFamily: "ABeeZee-Regular",
+  },
+  continueButton: {
+    backgroundColor: "#F4B731",
+    padding: 16,
+    borderRadius: 25,
     alignItems: "center",
+    marginVertical: 16,
   },
-  buttonText: { color: "#fff", fontWeight: "bold" },
-  linkText: { marginTop: 10, color: "#333", textAlign: "center" },
+  continueText: {
+    fontWeight: "bold",
+    color: "black",
+    fontSize: 16,
+    fontFamily: "ABeeZee-Regular",
+  },
+  bottomText: {
+    textAlign: "center",
+    marginBottom: 16,
+    fontSize: 12,
+    fontFamily: "ABeeZee-Regular",
+  },
+  linkText: {
+    fontWeight: "bold",
+    textDecorationLine: "underline",
+  },
 });
 
 export default Login;
