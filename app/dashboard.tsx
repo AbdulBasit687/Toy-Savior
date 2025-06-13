@@ -1,52 +1,152 @@
-// File path: /app/dashboard.tsx
-import { router } from "expo-router";
+import { Ionicons } from '@expo/vector-icons';
+import firestore from '@react-native-firebase/firestore';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  FlatList,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
+import UploadOptionsSheet from '../components/UploadOptionsSheet';
 
-const dummyProducts = [
-  {
-    id: "1",
-    title: "Drone BA-965K",
-    price: "Rs. 45,000",
-    image: require("../assets/images/drone.png"), // 🔁 Replace with your image path
-  },
-  {
-    id: "2",
-    title: "Tarx Car 2398",
-    price: "Rs. 10,000",
-    image: require("../assets/images/car.png"),
-  },
-];
+export default function HomeExplore() {
+  const router = useRouter();
+  const [featured, setFeatured] = useState([]);
+  const [newlyUploaded, setNewlyUploaded] = useState([]);
+  const [sheetVisible, setSheetVisible] = useState(false);
 
-export default function Dashboard() {
+  useEffect(() => {
+    const unsubscribeFeatured = firestore()
+      .collection('products')
+      .where('category', '==', 'Featured')
+      .onSnapshot(snapshot => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setFeatured(data);
+      });
+
+    const unsubscribeNew = firestore()
+      .collection('products')
+      .where('category', '==', 'Newly Uploades')
+      .onSnapshot(snapshot => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setNewlyUploaded(data);
+      });
+
+    return () => {
+      unsubscribeFeatured();
+      unsubscribeNew();
+    };
+  }, []);
+
+  const handleOptionSelect = (option: string) => {
+    setSheetVisible(false);
+    switch (option) {
+      case 'repair':
+        router.push('/screens/RequestRepair');
+        break;
+      case 'sell':
+        router.push('/screens/SellToy');
+        break;
+      case 'donate':
+        router.push('/screens/DonateToy');
+        break;
+    }
+  };
+
+  const renderProductCard = (item) => (
+    <View key={item.id} style={styles.card}>
+      <Image source={{ uri: item.image }} style={styles.cardImage} />
+      <Text style={styles.cardTitle}>{item.title || 'No Title'}</Text>
+      <Text style={styles.cardPrice}>{item.price || 'No Price'}</Text>
+    </View>
+  );
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Featured</Text>
-      <FlatList
-        data={dummyProducts}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() =>
-              router.push({
-                pathname: "/product-detail",
-                params: { id: item.id },
-              })
-            }
-          >
-            <View style={styles.card}>
-              <Image source={item.image} style={styles.image} />
-              <Text>{item.title}</Text>
-              <Text>{item.price}</Text>
-            </View>
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.dropdown}>
+            <Text style={styles.dropdownText}>Repair Request</Text>
+            <Image source={require('../assets/icons/down.png')} style={styles.dropdownIcon} />
           </TouchableOpacity>
-        )}
+          <TouchableOpacity>
+            <Image source={require('../assets/icons/heart.png')} style={styles.heartIcon} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={18} color="#555" style={{ marginHorizontal: 8 }} />
+          <TextInput placeholder="Search" placeholderTextColor="#888" style={styles.searchInput} />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
+          {[{ label: '0-5\nyears', icon: require('../assets/icons/0-5.png'), route: '/(tabs)/screens/CategoryAge0to5' },
+            { label: '6-10\nyears', icon: require('../assets/icons/6-10.png'), route: '/(tabs)/screens/CategoryAge6to10' },
+            { label: '11-15\nyears', icon: require('../assets/icons/11-15.png'), route: '/(tabs)/screens/CategoryAge11to15' },
+            { label: 'Drones', icon: require('../assets/icons/drone.png'), route: '/(tabs)/screens/Drones' },
+            { label: 'Consoles', icon: require('../assets/icons/console.png'), route: '/(tabs)/screens/Consoles' }
+          ].map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.categoryItem}
+              onPress={() => router.push(item.route)}
+            >
+              <Image source={item.icon} style={styles.categoryIcon} />
+              <Text style={styles.categoryLabel}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Featured</Text>
+          <Text style={styles.seeAll}>See All</Text>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
+          {featured.map(renderProductCard)}
+        </ScrollView>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Newly Uploaded</Text>
+          <Text style={styles.seeAll}>See All</Text>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
+          {newlyUploaded.map(renderProductCard)}
+        </ScrollView>
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.footerItem}>
+          <Image source={require('../assets/icons/home.png')} style={styles.footerIcon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerItem} onPress={() => setSheetVisible(true)}>
+          <Image source={require('../assets/icons/upload.png')} style={styles.footerIconupload} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerItem}>
+          <Image source={require('../assets/icons/message.png')} style={styles.footerIcon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerItem}>
+          <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
+        </TouchableOpacity>
+      </View>
+
+      <UploadOptionsSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+        onSelect={handleOptionSelect}
       />
     </View>
   );
@@ -55,25 +155,152 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
+    paddingTop: 40,
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: "bold",
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 140,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  dropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F4B731',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  dropdownText: {
+    marginRight: 6,
+    fontWeight: 'bold',
+  },
+  dropdownIcon: {
+    width: 10.58,
+    height: 4.73,
+    marginLeft: 4,
+  },
+  heartIcon: {
+    width: 17,
+    height: 16,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    backgroundColor: '#F4F4F4',
+    padding: 2,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+  },
+  section: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontWeight: 'bold',
+    fontSize: 14,
+    fontFamily: 'BalooTammudu2-SemiBold',
+  },
+  seeAll: {
+    color: '#555',
+    fontSize: 12,
+  },
+  categoryRow: {
+    flexDirection: 'row',
     marginBottom: 16,
   },
-  card: {
-    padding: 16,
-    marginVertical: 8,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
-    alignItems: "center",
+  categoryItem: {
+    alignItems: 'center',
+    marginRight: 20,
   },
-  image: {
-    width: 200,
-    height: 200,
-    marginBottom: 8,
-    resizeMode: "contain",
+  categoryIcon: {
+    width: 50,
+    height: 50,
+    marginBottom: 6,
+  },
+  categoryLabel: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontFamily: 'ABeeZee-Regular',
+  },
+  cardRow: {
+    flexDirection: 'row',
+    marginBottom: 24,
+  },
+  card: {
+    width: 162,
+    height: 280,
+    backgroundColor: '#fff',
+    marginRight: 22,
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardImage: {
+    width: '100%',
+    height: 220,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+  },
+  cardTitle: {
+    fontSize: 12,
+    marginHorizontal: 8,
+    marginTop: 6,
+    fontFamily: 'ABeeZee-Regular',
+    color: '#000',
+  },
+  cardPrice: {
+    fontSize: 12,
+    marginHorizontal: 8,
+    marginBottom: 10,
+    fontWeight: 'bold',
+    fontFamily: 'ABeeZee-Regular',
+    color: '#000',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingBottom: 40,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    zIndex: 999,
+  },
+  footerItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerIcon: {
+    width: 24,
+    height: 24,
+  },
+  footerIconupload: {
+    width: 20,
+    height: 23,
+  },
+  footerIconprofile: {
+    width: 16,
+    height: 23,
   },
 });
