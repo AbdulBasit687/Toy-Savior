@@ -138,9 +138,10 @@ export default function HomeExplore() {
         <TouchableOpacity style={styles.footerItem}>
           <Image source={require('../assets/icons/message.png')} style={styles.footerIcon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem}>
-          <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/ProfileScreen')}>
+  <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
+</TouchableOpacity>
+
       </View>
 
       <UploadOptionsSheet
