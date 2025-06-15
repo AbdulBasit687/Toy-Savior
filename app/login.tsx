@@ -21,7 +21,18 @@ const Login = () => {
   const handleLogin = async () => {
     try {
       await auth().signInWithEmailAndPassword(email, password);
-      router.replace("/dashboard");
+
+      const repairerEmails = [
+        "ahmed.repairtech@gmail.com",
+        "shah.electronicsfix@gmail.com",
+        "usman.devicecare@gmail.com",
+      ];
+
+      if (repairerEmails.includes(email.toLowerCase())) {
+        router.replace("/repairer-dashboard");
+      } else {
+        router.replace("/dashboard");
+      }
     } catch (error: any) {
       Alert.alert("Login Failed", error.message);
     }
