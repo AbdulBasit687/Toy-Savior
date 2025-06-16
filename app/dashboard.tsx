@@ -17,6 +17,7 @@ export default function HomeExplore() {
   const router = useRouter();
   const [featured, setFeatured] = useState([]);
   const [newlyUploaded, setNewlyUploaded] = useState([]);
+  const [donatedToys, setDonatedToys] = useState([]);
   const [sheetVisible, setSheetVisible] = useState(false);
 
   useEffect(() => {
@@ -36,9 +37,18 @@ export default function HomeExplore() {
         setNewlyUploaded(data);
       });
 
+      const unsubscribeDonated = firestore()
+    .collection('products')
+    .where('category', '==', 'Donated')
+    .onSnapshot(snapshot => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDonatedToys(data);
+    });
+
     return () => {
       unsubscribeFeatured();
       unsubscribeNew();
+      unsubscribeDonated();
     };
   }, []);
 
@@ -126,7 +136,19 @@ export default function HomeExplore() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
           {newlyUploaded.map(renderProductCard)}
         </ScrollView>
+
+                <View style={styles.section}>
+  <Text style={styles.sectionTitle}>Donated Toys</Text>
+  <Text style={styles.seeAll}>See All</Text>
+</View>
+
+<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
+  {donatedToys.map(renderProductCard)}
+</ScrollView>
       </ScrollView>
+
+      
+      
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.footerItem}>
@@ -150,6 +172,7 @@ export default function HomeExplore() {
         onSelect={handleOptionSelect}
       />
     </View>
+
   );
 }
 

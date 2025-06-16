@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import UploadOptionsSheet from '../../components/UploadOptionsSheet';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -22,6 +23,25 @@ export default function ProfileScreen() {
     email: '',
     photoURL: '',
   });
+
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [selectedOption, setSelectedOption] = useState('');
+
+  const handleOptionSelect = (option: string) => {
+    setSelectedOption(option);
+    setSheetVisible(false);
+    switch (option) {
+      case 'repair':
+        router.push('/screens/RequestRepair');
+        break;
+      case 'sell':
+        router.push('/screens/SellToy');
+        break;
+      case 'donate':
+        router.push('/screens/DonateToy');
+        break;
+    }
+  };
 
   const fetchUserData = async () => {
     try {
@@ -137,6 +157,10 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/Help')}>
             <Text style={styles.optionText}>Help</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/MyRequestsScreen')}>
+  <Text style={styles.optionText}>My Requests</Text>
+</TouchableOpacity>
+
         </View>
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -148,7 +172,7 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/dashboard')}>
           <Image source={require('../../assets/icons/home.png')} style={styles.footerIcon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem}>
+        <TouchableOpacity style={styles.footerItem} onPress={() => setSheetVisible(true)}>
           <Image source={require('../../assets/icons/upload.png')} style={styles.footerIconupload} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.footerItem}>
@@ -158,6 +182,12 @@ export default function ProfileScreen() {
           <Image source={require('../../assets/icons/profile.png')} style={styles.footerIconprofile} />
         </TouchableOpacity>
       </View>
+
+      <UploadOptionsSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+        onSelect={handleOptionSelect}
+      />
     </View>
   );
 }
@@ -228,7 +258,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'ABeeZee-Regular',
   },
- footer: {
+  footer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
