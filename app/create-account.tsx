@@ -1,5 +1,3 @@
-// File: /app/create-account.tsx
-
 import { Ionicons } from "@expo/vector-icons";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
@@ -11,7 +9,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 const CreateAccount = () => {
@@ -19,10 +17,9 @@ const CreateAccount = () => {
   const [last, setLast] = useState("");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
+ const [role, setRole] = useState('');
+const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
- /* useEffect(() => {
-    router.push("/dashboard");
-  }, []);*/
 
   const handleRegister = async () => {
     try {
@@ -35,6 +32,7 @@ const CreateAccount = () => {
         firstName: first,
         lastName: last,
         email,
+        role, // NEW
       });
       router.replace("/login");
     } catch (e: any) {
@@ -45,15 +43,12 @@ const CreateAccount = () => {
 
   return (
     <View style={styles.container}>
-      {/* Back Button */}
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <Ionicons name="chevron-back" size={24} color="black" />
       </TouchableOpacity>
 
-      {/* Title */}
       <Text style={styles.title}>Create Account</Text>
 
-      {/* Form Fields */}
       <TextInput
         placeholder="Firstname"
         placeholderTextColor="#888"
@@ -81,18 +76,38 @@ const CreateAccount = () => {
         onChangeText={setPass}
       />
 
-      {/* Continue Button */}
+      {/* Dropdown Picker */}
+      <Text style={styles.label}>Sign Up As</Text>
+<TouchableOpacity onPress={() => setShowRoleDropdown(!showRoleDropdown)} style={styles.dropdownBox}>
+  <Text style={styles.dropdownText}>{role || 'Select Role'}</Text>
+  <Ionicons name={showRoleDropdown ? 'chevron-up' : 'chevron-down'} size={18} color="#000" />
+</TouchableOpacity>
+
+{showRoleDropdown && (
+  <View style={styles.dropdownList}>
+    {['user', 'repairer'].map((r) => (
+      <TouchableOpacity
+        key={r}
+        onPress={() => {
+          setRole(r);
+          setShowRoleDropdown(false);
+        }}
+        style={styles.dropdownItemBox}
+      >
+        <Text style={styles.dropdownText}>{r.charAt(0).toUpperCase() + r.slice(1)}</Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+)}
+
+
       <TouchableOpacity style={styles.continueButton} onPress={handleRegister}>
         <Text style={styles.continueText}>Continue</Text>
       </TouchableOpacity>
 
-      {/* Forgot Password */}
       <Text style={styles.footerText}>
         Forgot Password?{" "}
-        <Text
-          style={styles.reset}
-          onPress={() => router.push("/ForgotPassword")}
-        >
+        <Text style={styles.reset} onPress={() => router.push("/ForgotPassword")}>
           Reset
         </Text>
       </Text>
@@ -132,6 +147,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "ABeeZee-Regular",
   },
+  label: {
+  fontWeight: 'bold',
+  marginBottom: 6,
+  fontSize: 14,
+  fontFamily: 'BalooTammudu2-SemiBold',
+},
+dropdownBox: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  backgroundColor: '#F5F5F5',
+  paddingHorizontal: 16,
+  paddingVertical: 14,
+  borderRadius: 10,
+  marginBottom: 10,
+  width: '100%',
+},
+dropdownList: {
+  backgroundColor: '#F5F5F5',
+  borderRadius: 10,
+  marginBottom: 12,
+},
+dropdownItemBox: {
+  paddingVertical: 12,
+  paddingHorizontal: 16,
+  borderBottomWidth: 1,
+  borderBottomColor: '#ddd',
+},
+dropdownText: {
+  fontSize: 14,
+  fontFamily: 'ABeeZee-Regular',
+},
   continueButton: {
     backgroundColor: "#F4B731",
     padding: 14,

@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -99,6 +100,7 @@ export default function RequestRepair() {
     try {
       setUploading(true);
       const imageUrl = await uploadToCloudinary(imageUri);
+      const currentUser = auth().currentUser;
 
       const requestData = {
         toyName,
@@ -106,6 +108,7 @@ export default function RequestRepair() {
         urgency,
         toyType,
         imageUrl,
+        userId: currentUser?.uid,
         createdAt: firestore.FieldValue.serverTimestamp(),
       };
 

@@ -1,6 +1,7 @@
 // File: /app/login.tsx
 
 import auth from "@react-native-firebase/auth";
+import firestore from '@react-native-firebase/firestore';
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -17,18 +18,29 @@ import SocialButton from "../components/SocialButton";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [selectedRole, setSelectedRole] = useState("repairer");
 
   const handleLogin = async () => {
     try {
-      await auth().signInWithEmailAndPassword(email, password);
+const userCredential = await auth().signInWithEmailAndPassword(email, password);
+const userDoc = await firestore().collection("users").doc(userCredential.user.uid).get();
+const userData = userDoc.data();
 
-      const repairerEmails = [
-        "ahmed.repairtech@gmail.com",
-        "shah.electronicsfix@gmail.com",
-        "usman.devicecare@gmail.com",
-      ];
 
-      if (repairerEmails.includes(email.toLowerCase())) {
+       if (!userData || !userData.role) {
+        Alert.alert("Login Failed", "User role not found.");
+        return;
+      }
+
+      if (userData.role !== selectedRole) {
+        Alert.alert(
+          "Role Mismatch",
+          `This account is registered as a "${userData.role}". Please select the correct role to login.`
+        );
+        return;
+      }
+
+      if (selectedRole === "repairer") {
         router.replace("/repairer-dashboard");
       } else {
         router.replace("/dashboard");
@@ -43,7 +55,7 @@ const Login = () => {
       <Text style={styles.heading}>Sign in</Text>
 
       <Text style={styles.subheading}>Sign in as:</Text>
-      <RoleSelector />
+<RoleSelector selectedRole={selectedRole} setSelectedRole={setSelectedRole} />
 
       <TextInput
         placeholder="Email Address"

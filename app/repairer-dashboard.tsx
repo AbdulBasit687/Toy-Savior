@@ -1,215 +1,218 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useState } from "react";
+import auth from "@react-native-firebase/auth";
+import firestore from "@react-native-firebase/firestore";
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+dayjs.extend(relativeTime);
 
 const categories = ["All", "Toys", "Drones", "Consoles", "Rides"];
 
-const requests = [
-  {
-    id: "1",
-    title: "SkyTracker Pro X5",
-    description:
-      "The drone’s propellers are not spinning correctly, causing it to lose balance mid-flight. Possible motor or gear damage.",
-    user: "Hassam Saleh",
-    time: "12 mins ago",
-    distance: "2.8 km",
-    location: "Downtown Tech Hub",
-    image: require("../assets/toys/drone.png"),
-  },
-  {
-    id: "2",
-    title: "ROG ALLY AMD Rayzen Z1",
-    description:
-      "The HDMI port of this gaming console is loose and console is not displaying anything on the TV.",
-    user: "Steve Harvey",
-    time: "15 mins ago",
-    distance: "4.0 km",
-    location: "Maple Avenue",
-    image: require("../assets/toys/newtoy.png"),
-  },
-  {
-    id: "3",
-    title: "360 Rolling Twister Car",
-    description:
-      "The remote control car is not responding to the controller. Likely issues include signal interference, damaged receiver module, or depleted batteries.",
-    user: "Hassam Saleh",
-    time: "20 mins ago",
-    distance: "3.2 km",
-    location: "Park Avenue",
-    image: require("../assets/toys/car.png"),
-  },
-];
-
 export default function RepairerDashboard() {
+    const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("All");
+  const [requests, setRequests] = useState<any[]>([]);
+
+ useEffect(() => {
+  const currentUser = auth().currentUser;
+  if (!currentUser) return;
+
+  const unsubscribe = firestore()
+    .collection("repairRequests")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(async (snapshot) => {
+      const fetchedRequests = await Promise.all(
+        snapshot.docs.map(async (doc) => {
+          const data = doc.data();
+          let userName = "Unknown";
+
+          if (data.userId) {
+            const userDoc = await firestore().collection("users").doc(data.userId).get();
+            if (userDoc.exists) {
+              const userData = userDoc.data();
+              userName = `${userData?.firstName || ""} ${userData?.lastName || ""}`;
+            }
+          }
+
+          return {
+            id: doc.id,
+            ...data,
+            userName,
+          };
+        })
+      );
+
+      const visibleRequests = fetchedRequests.filter(
+        req => !req.rejectedBy?.includes(currentUser.uid)
+      );
+
+      setRequests(visibleRequests);
+    });
+
+  return () => unsubscribe();
+}, []);
+
+const handleReject = async (requestId: string) => {
+  const currentUser = auth().currentUser;
+  if (!currentUser) return;
+
+  await firestore()
+    .collection("repairRequests")
+    .doc(requestId)
+    .update({
+      rejectedBy: firestore.FieldValue.arrayUnion(currentUser.uid),
+    });
+};
+
+  const filteredRequests = activeCategory === "All"
+    ? requests
+    : requests.filter(req => req.toyType === activeCategory.slice(0, -1));
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={20} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Repair Requests</Text>
-        <View style={{ width: 24 }} />
+      <View style={styles.headerRow}>
+        <Text style={styles.pageTitle}>Repair Requests</Text>
       </View>
 
-      {/* Categories */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryScroll}
-      >
-        {categories.map((cat) => (
-          <TouchableOpacity
-            key={cat}
-            onPress={() => setActiveCategory(cat)}
-            style={[
-              styles.categoryBtn,
-              activeCategory === cat && styles.categoryBtnActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.categoryText,
-                activeCategory === cat && styles.categoryTextActive,
-              ]}
+      <View style={styles.categoryRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {categories.map(cat => (
+            <TouchableOpacity
+              key={cat}
+              onPress={() => setActiveCategory(cat)}
+              style={[styles.catBtn, activeCategory === cat && styles.catBtnActive]}
             >
-              {cat}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Text style={[styles.catText, activeCategory === cat && styles.catTextActive]}>
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
-      {/* Requests */}
-      <ScrollView contentContainerStyle={styles.cardList} style={{ flex: 1 }}>
-        {requests.map((item) => (
+      <ScrollView contentContainerStyle={styles.cardList}>
+        {filteredRequests.map((item) => (
           <View key={item.id} style={styles.card}>
             <View style={styles.cardRow}>
-              <Image source={item.image} style={styles.cardImage} />
+              <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
               <View style={styles.cardInfo}>
-                <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardDesc} numberOfLines={2}>
-                  {item.description}{" "}
-                  <Text style={styles.seeMore}>See More</Text>
-                </Text>
-                <Text style={styles.uploadedBy}>
-                  Uploaded By : <Text style={styles.boldText}>{item.user}</Text>
-                </Text>
+                <Text style={styles.cardTitle}>{item.toyName}</Text>
+                <Text style={styles.cardDesc} numberOfLines={2}>{item.description} <Text style={styles.seeMore}>See More</Text></Text>
+                <Text style={styles.uploadedBy}>Uploaded By : <Text style={styles.cardDesc}>{item.userName || 'Unknown'}</Text></Text>
                 <Text style={styles.metaText}>
-                  🕒 {item.time}, 📍 {item.distance} – {item.location}
-                </Text>
+  🕒 {dayjs(item.createdAt?.toDate?.()).fromNow()} – Downtown Tech Hub
+</Text>
               </View>
             </View>
             <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.rejectBtn}>
-                <Text style={styles.rejectText}>Reject</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.viewBtn}>
-                <Text style={styles.viewText}>View</Text>
-              </TouchableOpacity>
+              <TouchableOpacity style={styles.rejectBtn} onPress={() => handleReject(item.id)}>
+  <Text style={styles.rejectText}>Reject</Text>
+</TouchableOpacity>
+
+              <TouchableOpacity
+  style={styles.acceptBtn}
+  onPress={() =>
+    router.push({
+      pathname: '/screens/RepairRequestDetail',
+      params: { data: JSON.stringify(item) }
+    })
+  }
+>
+  <Text style={styles.acceptText}>View</Text>
+</TouchableOpacity>
+
             </View>
           </View>
         ))}
       </ScrollView>
-
-      {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity>
-          <Ionicons name="home-outline" size={24} color="black" />
+        <TouchableOpacity style={styles.footerItem} >
+                  <Image source={require('../assets/icons/home.png')} style={styles.footerIcon} />
+                </TouchableOpacity>
+<TouchableOpacity style={styles.footerItem}>
+          <Image source={require('../assets/icons/message.png')} style={styles.footerIcon} />
         </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="bookmark" size={24} color="#F4B731" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="chatbox-ellipses-outline" size={24} color="#555" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Ionicons name="person-outline" size={24} color="#000" />
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.footerItem} onPress={() => router.push('../screens/RepairerProfile')}>
+                  <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
+                </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingTop: 60,
+  container: { flex: 1, backgroundColor: "#fff", paddingTop: 50 },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
+    marginBottom: 16,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  backBtn: {
-    backgroundColor: "#F4B731",
-    borderRadius: 20,
-    width: 36,
-    height: 36,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 16,
+  pageTitle: {
+    fontSize: 18,
     fontWeight: "bold",
-    fontFamily: "ABeeZee-Regular",
+    fontFamily: "BalooTammudu2-SemiBold",
+    marginLeft: 95,
   },
-  categoryScroll: {
-    flexDirection: "row",
-    marginBottom: 10,
+  categoryRow: {
+    paddingLeft: 16,
+    marginBottom: 8,
   },
-  categoryBtn: {
-    paddingHorizontal: 15,
-  paddingVertical: 15,
-  backgroundColor: "#F5F5F5",
-  borderRadius: 30,
-  marginRight: 5,
-  alignItems: "center",
+  catBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#F5F5F5",
+    marginRight: 8,
   },
-  categoryBtnActive: {
+  catBtnActive: {
     backgroundColor: "#F4B731",
   },
-  categoryText: {
+  catText: {
+    color: "#555",
+    fontSize: 13,
     fontFamily: "ABeeZee-Regular",
-  fontSize: 14,
-  color: "#555",
   },
-  categoryTextActive: {
-  fontWeight: "bold",
-  color: "#000",
+  catTextActive: {
+    color: "#fff",
+    fontWeight: "bold",
   },
   cardList: {
+    padding: 16,
     paddingBottom: 80,
   },
   card: {
-    backgroundColor: "#F9F9F9",
+    backgroundColor: "#F2F2F2",
     borderRadius: 12,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  cardRow: {
-    flexDirection: "row",
+  cardRow: { 
+    flexDirection: "row", 
+    marginBottom: 8 
   },
-  cardImage: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
-    resizeMode: "contain",
+  cardImage: { 
+    width: 40, 
+    height: 40, 
+    marginRight: 10, 
+    resizeMode: "cover", 
+    borderRadius: 6 
   },
-  cardInfo: {
-    flex: 1,
+  cardInfo: { 
+    flex: 1 
   },
   cardTitle: {
     fontWeight: "bold",
@@ -222,57 +225,85 @@ const styles = StyleSheet.create({
     fontFamily: "ABeeZee-Regular",
   },
   seeMore: {
-    color: "#007AFF",
+    color: "#555",
+    fontWeight: "600",
   },
   uploadedBy: {
     fontSize: 12,
     marginTop: 4,
     fontFamily: "ABeeZee-Regular",
+    fontWeight: "bold"
   },
-  boldText: {
-    fontWeight: "bold",
+  boldText: { 
+    fontWeight: "bold" 
   },
   metaText: {
-    fontSize: 10,
-    color: "#666",
-    marginTop: 2,
+    fontSize: 11,
+    color: "#888",
     fontFamily: "ABeeZee-Regular",
+    marginTop: 4,
   },
   buttonRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  marginTop: 12,
-  gap: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 12,
   },
   rejectBtn: {
     flex: 1,
-    borderWidth: 1,
     borderColor: "#000",
+    borderWidth: 1,
     borderRadius: 20,
     paddingVertical: 8,
     marginRight: 8,
     alignItems: "center",
   },
-  rejectText: {
-    fontFamily: "ABeeZee-Regular",
-  },
-  viewBtn: {
+  acceptBtn: {
     flex: 1,
     backgroundColor: "#F4B731",
     borderRadius: 20,
     paddingVertical: 8,
     alignItems: "center",
   },
-  viewText: {
-    fontFamily: "ABeeZee-Regular",
+  rejectText: {
+    color: "#000",
     fontWeight: "bold",
+    fontFamily: "ABeeZee-Regular",
+  },
+  acceptText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontFamily: "ABeeZee-Regular",
   },
   footer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingBottom: 40,
+    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: "#eee",
-    backgroundColor: "#fff",
+    borderTopColor: '#eee',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    zIndex: 999,
+  },
+  footerItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerIcon: {
+    width: 24,
+    height: 24,
+  },
+  footerIconupload: {
+    width: 20,
+    height: 23,
+  },
+  footerIconprofile: {
+    width: 16,
+    height: 23,
   },
 });

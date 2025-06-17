@@ -1,23 +1,21 @@
-// apps/(tabs)/components/RoleSelector.tsx
-import React, { useState } from 'react';
+// File: /app/components/RoleSelector.tsx
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const RoleSelector = () => {
-  const [selected, setSelected] = useState<'Repairer' | 'User'>('Repairer');
-
+const RoleSelector = ({ selectedRole, setSelectedRole }) => {
   return (
     <View style={styles.container}>
-      {['Repairer', 'User'].map(role => (
+      {['repairer', 'user'].map(role => (
         <TouchableOpacity
           key={role}
           style={[
             styles.roleButton,
-            selected === role && styles.selected,
+            selectedRole === role && styles.selected,
           ]}
-          onPress={() => setSelected(role as any)}
+          onPress={() => setSelectedRole(role)}
         >
-          <Text style={selected === role ? styles.selectedText : styles.text}>
-            {role}
+          <Text style={selectedRole === role ? styles.selectedText : styles.text}>
+            {role.charAt(0).toUpperCase() + role.slice(1)}
           </Text>
         </TouchableOpacity>
       ))}
@@ -45,8 +43,11 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#333',
+    fontFamily: 'ABeeZee-Regular',
   },
   selectedText: {
     fontWeight: 'bold',
+    color: '#000',
+    fontFamily: 'ABeeZee-Regular',
   },
 });
