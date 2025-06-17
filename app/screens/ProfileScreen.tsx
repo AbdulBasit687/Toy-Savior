@@ -26,6 +26,7 @@ export default function ProfileScreen() {
 
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedOption, setSelectedOption] = useState('');
+  const [role, setRole] = useState('');
 
   const handleOptionSelect = (option: string) => {
     setSelectedOption(option);
@@ -64,8 +65,19 @@ export default function ProfileScreen() {
   };
 
   useEffect(() => {
-    fetchUserData();
-  }, []);
+  const fetchUserData = async () => {
+    const currentUser = auth().currentUser;
+    if (!currentUser) return;
+
+    const doc = await firestore().collection('users').doc(currentUser.uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      setUserInfo(data);
+      setRole(data?.role || ''); // ✅ Add this line here
+    }
+  };
+  fetchUserData();
+}, []);
 
   const handlePickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -162,6 +174,14 @@ export default function ProfileScreen() {
 </TouchableOpacity>
 
         </View>
+        {role === 'repairer' && (
+  <TouchableOpacity
+    style={styles.switchButton}
+    onPress={() => router.push('/repairer-dashboard')}
+  >
+    <Text style={styles.switchButtonText}>Return to Repairer Mode</Text>
+  </TouchableOpacity>
+)}
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Log out</Text>
@@ -290,4 +310,18 @@ const styles = StyleSheet.create({
     width: 16,
     height: 23,
   },
+  switchButton: {
+ backgroundColor: "#F4B731",
+    padding: 14,
+    borderRadius: 30,
+    alignItems: "center",
+    marginTop: 10,
+},
+
+switchButtonText: {
+  fontWeight: "bold",
+    fontSize: 16,
+    fontFamily: "ABeeZee-Regular",
+},
+
 });
