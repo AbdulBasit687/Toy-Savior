@@ -173,8 +173,9 @@ export default function HomeExplore() {
         <TouchableOpacity style={styles.footerItem} onPress={() => setSheetVisible(true)}>
           <Image source={require('../assets/icons/upload.png')} style={styles.footerIconupload} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem}>
-          <Image source={require('../assets/icons/message.png')} style={styles.footerIcon} />
+        <TouchableOpacity onPress={() => router.push('/MessageList')}>
+          <Ionicons name="chatbubble-ellipses-outline" size={28} color="#333" 
+          />
         </TouchableOpacity>
         <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/ProfileScreen')}>
           <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
