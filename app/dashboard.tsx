@@ -39,12 +39,13 @@ export default function HomeExplore() {
       });
 
     const unsubscribeDonated = firestore()
-      .collection('products')
-      .where('category', '==', 'Donated')
-      .onSnapshot(snapshot => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setDonatedToys(data);
-      });
+  .collection('donatedToys')
+  .orderBy('createdAt', 'desc')
+  .limit(2)
+  .onSnapshot(snapshot => {
+    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setDonatedToys(data);
+  });
 
     return () => {
       unsubscribeFeatured();
@@ -79,6 +80,15 @@ export default function HomeExplore() {
       </View>
     </View>
   );
+  const renderDonatedCard = (item) => (
+  <View key={item.id} style={styles.card}>
+    <Image
+      source={{ uri: item.imageUrls?.[0] || '' }}
+      style={styles.cardImage}
+    />
+    <Text style={styles.cardTitle}>{item.title || 'No Title'}</Text>
+  </View>
+);
 
   return (
     <View style={{ flex: 1 }}>
@@ -144,13 +154,17 @@ export default function HomeExplore() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Donated Toys</Text>
-          <Text style={styles.seeAll}>See All</Text>
+         <TouchableOpacity onPress={() => router.push('/screens/DonateRequestsList')}>
+  <Text style={styles.seeAll}>See All</Text>
+</TouchableOpacity>
+
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
-          {donatedToys.map(renderProductCard)}
-        </ScrollView>
-      </ScrollView>
+<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
+  {donatedToys.map(renderDonatedCard)}
+</ScrollView>
+</ScrollView>
+
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.footerItem}>

@@ -4,19 +4,20 @@ import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    ToastAndroid,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  ToastAndroid,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function DonateToyResultScreen() {
-  const { data } = useLocalSearchParams();
+  const { data, from } = useLocalSearchParams();
+  
   if (!data) {
     return (
       <View style={styles.container}>
@@ -37,6 +38,7 @@ export default function DonateToyResultScreen() {
   const [location, setLocation] = useState(parsedData.location || '');
   const [imageUrls, setImageUrls] = useState(parsedData.imageUrls || []);
   const [saving, setSaving] = useState(false);
+  
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -76,15 +78,15 @@ export default function DonateToyResultScreen() {
         <TouchableOpacity onPress={() => router.replace('/dashboard')} style={styles.backIcon}>
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        {!isEditing ? (
-          <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
-            <Ionicons name="create-outline" size={20} color="#000" />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditing(false)}>
-            <Ionicons name="close" size={20} color="#000" />
-          </TouchableOpacity>
-        )}
+       {from !== 'view' && !isEditing ? (
+  <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
+    <Ionicons name="create-outline" size={20} color="#000" />
+  </TouchableOpacity>
+) : isEditing ? (
+  <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditing(false)}>
+    <Ionicons name="close" size={20} color="#000" />
+  </TouchableOpacity>
+) : null}
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
