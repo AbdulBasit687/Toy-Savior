@@ -1,15 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const screenWidth = Dimensions.get('window').width;
 
 export default function UploadOptionsSheet({ visible, onClose, onSelect, selected }) {
   const [current, setCurrent] = useState(selected);
 
+  useEffect(() => {
+    setCurrent(selected);
+  }, [selected]);
+
   const handleSelect = (option: string) => {
     setCurrent(option);
     onSelect(option);
+    onClose(); // Optional: auto-close on selection
   };
-
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -22,36 +28,32 @@ export default function UploadOptionsSheet({ visible, onClose, onSelect, selecte
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={[styles.optionButton, current === 'repair' && styles.selected]}
-            onPress={() => handleSelect('repair')}
-          >
-            <Text style={[styles.optionText, current === 'repair' && styles.selectedText]}>
-              Request Repair
-            </Text>
-            {current === 'repair' && <Ionicons name="checkmark" size={20} color="#fff" />}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.optionButton, selected === 'sell' && styles.selected]}
-            onPress={() => handleSelect('sell')}
-          >
-            <Text style={[styles.optionText, selected === 'sell' && styles.selectedText]}>
-              Sell a Toy
-            </Text>
-            {selected === 'sell' && <Ionicons name="checkmark" size={20} color="#fff" />}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.optionButton, selected === 'donate' && styles.selected]}
-            onPress={() => handleSelect('donate')}
-          >
-            <Text style={[styles.optionText, selected === 'donate' && styles.selectedText]}>
-              Donate Toy
-            </Text>
-            {selected === 'donate' && <Ionicons name="checkmark" size={20} color="#fff" />}
-          </TouchableOpacity>
-
+          {[
+            { key: 'repair', label: 'Request Repair' },
+            { key: 'sell', label: 'Sell a Toy' },
+            { key: 'donate', label: 'Donate Toy' },
+          ].map((item) => (
+            <TouchableOpacity
+              key={item.key}
+              style={[
+                styles.optionButton,
+                current === item.key && styles.selected,
+              ]}
+              onPress={() => handleSelect(item.key)}
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  current === item.key && styles.selectedText,
+                ]}
+              >
+                {item.label}
+              </Text>
+              {current === item.key && (
+                <Ionicons name="checkmark" size={20} color="#fff" />
+              )}
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
     </Modal>
@@ -78,15 +80,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    paddingLeft: 80,
     fontSize: 18,
     fontWeight: 'bold',
     fontFamily: 'BalooTammudu2-SemiBold',
-  },
-  clearText: {
-    fontSize: 16,
-    color: '#555',
-    fontFamily: 'ABeeZee-Regular',
   },
   optionButton: {
     backgroundColor: '#F5F5F5',
@@ -97,8 +93,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    width: 342,
-    height: 56
+    width: screenWidth - 40,
   },
   selected: {
     backgroundColor: '#F4B731',
@@ -111,14 +106,5 @@ const styles = StyleSheet.create({
   selectedText: {
     color: '#fff',
     fontWeight: 'bold',
-  },
-  cancelButton: {
-    marginTop: 10,
-    alignItems: 'center',
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#888',
-    fontFamily: 'ABeeZee-Regular',
   },
 });

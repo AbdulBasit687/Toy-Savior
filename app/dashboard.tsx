@@ -1,3 +1,4 @@
+// File: /app/dashboard.tsx (UPDATED VERSION)
 import { Ionicons } from '@expo/vector-icons';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
@@ -31,19 +32,19 @@ export default function HomeExplore() {
 
     const unsubscribeNew = firestore()
       .collection('products')
-      .where('category', '==', 'Newly Uploades')
+      .where('category', '==', 'Newly Uploaded')
       .onSnapshot(snapshot => {
         const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setNewlyUploaded(data);
       });
 
-      const unsubscribeDonated = firestore()
-    .collection('products')
-    .where('category', '==', 'Donated')
-    .onSnapshot(snapshot => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setDonatedToys(data);
-    });
+    const unsubscribeDonated = firestore()
+      .collection('products')
+      .where('category', '==', 'Donated')
+      .onSnapshot(snapshot => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setDonatedToys(data);
+      });
 
     return () => {
       unsubscribeFeatured();
@@ -71,7 +72,11 @@ export default function HomeExplore() {
     <View key={item.id} style={styles.card}>
       <Image source={{ uri: item.image }} style={styles.cardImage} />
       <Text style={styles.cardTitle}>{item.title || 'No Title'}</Text>
-      <Text style={styles.cardPrice}>{item.price || 'No Price'}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8 }}>
+        <Text style={styles.cardPrice}>Rs. {item.price || 'N/A'}</Text>
+        <Ionicons name="location-outline" size={12} color="#555" style={{ marginLeft: 6, marginRight: 2 }} />
+        <Text style={{ fontSize: 12, color: '#555' }}>{item.area || 'Unknown'}</Text>
+      </View>
     </View>
   );
 
@@ -137,18 +142,15 @@ export default function HomeExplore() {
           {newlyUploaded.map(renderProductCard)}
         </ScrollView>
 
-                <View style={styles.section}>
-  <Text style={styles.sectionTitle}>Donated Toys</Text>
-  <Text style={styles.seeAll}>See All</Text>
-</View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Donated Toys</Text>
+          <Text style={styles.seeAll}>See All</Text>
+        </View>
 
-<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
-  {donatedToys.map(renderProductCard)}
-</ScrollView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
+          {donatedToys.map(renderProductCard)}
+        </ScrollView>
       </ScrollView>
-
-      
-      
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.footerItem}>
@@ -161,9 +163,8 @@ export default function HomeExplore() {
           <Image source={require('../assets/icons/message.png')} style={styles.footerIcon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/ProfileScreen')}>
-  <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
-</TouchableOpacity>
-
+          <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
+        </TouchableOpacity>
       </View>
 
       <UploadOptionsSheet
@@ -172,7 +173,6 @@ export default function HomeExplore() {
         onSelect={handleOptionSelect}
       />
     </View>
-
   );
 }
 
@@ -289,8 +289,6 @@ const styles = StyleSheet.create({
   },
   cardPrice: {
     fontSize: 12,
-    marginHorizontal: 8,
-    marginBottom: 10,
     fontWeight: 'bold',
     fontFamily: 'ABeeZee-Regular',
     color: '#000',
