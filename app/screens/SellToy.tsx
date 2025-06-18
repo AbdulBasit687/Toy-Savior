@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -14,37 +14,43 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  ToastAndroid,
   TouchableOpacity,
   View,
 } from 'react-native';
 import UploadOptionsSheet from '../../components/UploadOptionsSheet';
 
 export default function SellToy() {
-  const [toyName, setToyName] = useState('');
-  const [description, setDescription] = useState('');
-  const [toyType, setToyType] = useState('');
-  const [condition, setCondition] = useState('');
-  const [price, setPrice] = useState('');
-  const [area, setArea] = useState('');
-  const [location, setLocation] = useState('');
-  const [imageUri, setImageUri] = useState('');
+  const { editData } = useLocalSearchParams();
+  const parsedEdit = typeof editData === 'string' ? JSON.parse(editData) : null;
+
+  const [toyName, setToyName] = useState(parsedEdit?.title || '');
+  const [description, setDescription] = useState(parsedEdit?.description || '');
+  const [toyType, setToyType] = useState(parsedEdit?.toyType || '');
+  const [condition, setCondition] = useState(parsedEdit?.condition || '');
+  const [price, setPrice] = useState(parsedEdit?.price || '');
+  const [area, setArea] = useState(parsedEdit?.area || '');
+  const [location, setLocation] = useState(parsedEdit?.location || '');
+  const [imageUri, setImageUri] = useState(parsedEdit?.image || '');
   const [uploading, setUploading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [showCameraOptions, setShowCameraOptions] = useState(false);
   const [selectedOption, setSelectedOption] = useState('sell');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [userInfo, setUserInfo] = useState({ firstName: '', email: '' });
+  const [userInfo, setUserInfo] = useState({ firstName: '', email: '', userCreatedAt: '' });
 
   useEffect(() => {
     const fetchUser = async () => {
       const currentUser = auth().currentUser;
       if (currentUser) {
-        const doc = await firestore().collection('users').doc(currentUser.uid).get();
-        const data = doc.data();
+        const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
+        const data = userDoc.data();
+        const userCreatedAt = data?.createdAt?.toDate().toISOString() ?? new Date().toISOString();
         setUserInfo({
           firstName: data?.firstName || '',
           email: data?.email || '',
+          userCreatedAt,
         });
       }
     };
@@ -95,7 +101,7 @@ export default function SellToy() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSave = async () => {
     if (!toyName || !description || !toyType || !imageUri || !condition || !price || !area || !location) {
       Alert.alert('All fields are required');
       return;
@@ -103,11 +109,11 @@ export default function SellToy() {
 
     try {
       setUploading(true);
-      const imageUrl = await uploadToCloudinary(imageUri);
+      const imageUrl = imageUri.startsWith('http') ? imageUri : await uploadToCloudinary(imageUri);
+
       const data = {
         title: toyName,
         description,
-        category: 'Newly Uploaded',
         toyType,
         condition,
         price,
@@ -116,19 +122,25 @@ export default function SellToy() {
         userName: userInfo.firstName,
         userEmail: userInfo.email,
         image: imageUrl,
+        category: 'Newly Uploaded',
         createdAt: firestore.FieldValue.serverTimestamp(),
       };
 
-      await firestore().collection('products').add(data);
-
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        router.push('/screens/SellToy');
-      }, 1200);
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Something went wrong while uploading.');
+      if (parsedEdit) {
+        await firestore().collection('products').doc(parsedEdit.docId).update(data);
+        ToastAndroid.show('Updated successfully', ToastAndroid.SHORT);
+        router.replace({ pathname: '/screens/SellToyResultScreen', params: { data: JSON.stringify({ ...data, docId: parsedEdit.docId, userCreatedAt: userInfo.userCreatedAt }) } });
+      } else {
+        const docRef = await firestore().collection('products').add(data);
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          router.push({ pathname: '/screens/SellToyResultScreen', params: { data: JSON.stringify({ ...data, docId: docRef.id, userCreatedAt: userInfo.userCreatedAt }) } });
+        }, 1200);
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Something went wrong.');
     } finally {
       setUploading(false);
     }
@@ -232,8 +244,8 @@ export default function SellToy() {
           onChangeText={setLocation}
         />
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={uploading}>
-          <Text style={styles.submitText}>{uploading ? 'Submitting...' : 'Upload'}</Text>
+        <TouchableOpacity style={styles.submitButton} onPress={handleSave} disabled={uploading}>
+          <Text style={styles.submitText}>{uploading ? 'Submitting...' : parsedEdit ? 'Save Changes' : 'Upload'}</Text>
         </TouchableOpacity>
       </ScrollView>
 

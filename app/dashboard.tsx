@@ -117,11 +117,11 @@ export default function HomeExplore() {
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryRow}>
-          {[{ label: '0-5\nyears', icon: require('../assets/icons/0-5.png'), route: '/(tabs)/screens/CategoryAge0to5' },
-            { label: '6-10\nyears', icon: require('../assets/icons/6-10.png'), route: '/(tabs)/screens/CategoryAge6to10' },
-            { label: '11-15\nyears', icon: require('../assets/icons/11-15.png'), route: '/(tabs)/screens/CategoryAge11to15' },
-            { label: 'Drones', icon: require('../assets/icons/drone.png'), route: '/(tabs)/screens/Drones' },
-            { label: 'Consoles', icon: require('../assets/icons/console.png'), route: '/(tabs)/screens/Consoles' }
+          {[{ label: '0-5\nyears', icon: require('../assets/icons/0-5.png'), route: '/screens/CategoryAge0to5' },
+            { label: '6-10\nyears', icon: require('../assets/icons/6-10.png'), route: '/screens/CategoryAge6to10' },
+            { label: '11-15\nyears', icon: require('../assets/icons/11-15.png'), route: '/screens/CategoryAge11to15' },
+            { label: 'Drones', icon: require('../assets/icons/drone.png'), route: '/screens/Drones' },
+            { label: 'Consoles', icon: require('../assets/icons/console.png'), route: '/screens/Console' }
           ].map((item, index) => (
             <TouchableOpacity
               key={index}
