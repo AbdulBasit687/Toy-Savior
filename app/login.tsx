@@ -13,7 +13,6 @@ import {
   View,
 } from "react-native";
 import RoleSelector from "../components/RoleSelector";
-import SocialButton from "../components/SocialButton";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -85,9 +84,6 @@ const userData = userDoc.data();
         </Text>
       </Text>
 
-      <SocialButton icon="apple" label="Continue With Apple" />
-      <SocialButton icon="google" label="Continue With Google" />
-      <SocialButton icon="facebook" label="Continue With Facebook" />
     </View>
   );
 };
