@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { createDummyChat } from "../utils/chatUtils"; // Adjust the import path as needed
+import { createDummyChat } from "../utils/chatUtils";
 
 interface Chat {
   id: string;
@@ -50,10 +50,18 @@ const ChatListScreen = () => {
       .orderBy("updatedAt", "desc")
       .onSnapshot(
         (snapshot) => {
-          const chatList = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as Chat[];
+          const chatList = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            if (!data || !data.participantDetails || !Array.isArray(data.participants)) {
+              return null;
+            }
+
+            return {
+              id: doc.id,
+              ...data,
+            } as Chat;
+          }).filter(Boolean);
+
           setChats(chatList);
           setLoading(false);
         },
@@ -67,15 +75,25 @@ const ChatListScreen = () => {
   }, [currentUser]);
 
   const getOtherParticipant = (
-    participantDetails: Record<string, ParticipantDetail>
+    participantDetails: Record<string, ParticipantDetail> | undefined
   ): ParticipantDetail => {
-    if (!currentUser) return {} as ParticipantDetail;
+    if (!currentUser || !participantDetails) return {
+      firstName: "Unknown",
+      lastName: "",
+      role: "User"
+    };
 
     const otherUid = Object.keys(participantDetails).find(
       (uid) => uid !== currentUser.uid
     );
 
-    return otherUid ? participantDetails[otherUid] : ({} as ParticipantDetail);
+    return otherUid && participantDetails[otherUid]
+      ? participantDetails[otherUid]
+      : {
+          firstName: "Unknown",
+          lastName: "",
+          role: "User",
+        };
   };
 
   const formatTime = (
@@ -102,6 +120,8 @@ const ChatListScreen = () => {
   };
 
   const renderChatItem = ({ item }: { item: Chat }) => {
+    if (!item || !item.participantDetails) return null;
+
     const otherParticipant = getOtherParticipant(item.participantDetails);
 
     return (
@@ -127,8 +147,8 @@ const ChatListScreen = () => {
           ) : (
             <View style={styles.defaultAvatar}>
               <Text style={styles.avatarText}>
-                {otherParticipant.firstName?.charAt(0)}
-                {otherParticipant.lastName?.charAt(0)}
+                {otherParticipant.firstName?.charAt(0) ?? "?"}
+                {otherParticipant.lastName?.charAt(0) ?? ""}
               </Text>
             </View>
           )}
@@ -179,7 +199,6 @@ const ChatListScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Create Dummy Chat Button */}
       <TouchableOpacity
         style={styles.dummyButton}
         onPress={handleCreateDummyChat}
@@ -195,7 +214,7 @@ const ChatListScreen = () => {
         renderItem={renderChatItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={
-          chats.length === 0 ? styles.emptyContainer : null
+          chats.length === 0 ? styles.emptyContainer : undefined
         }
         ListEmptyComponent={
           <View style={styles.emptyState}>
@@ -213,15 +232,8 @@ const ChatListScreen = () => {
 export default ChatListScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { flex: 1, backgroundColor: "#FFFFFF" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   dummyButton: {
     backgroundColor: "#007AFF",
     marginHorizontal: 16,
@@ -231,11 +243,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
   },
-  dummyButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  dummyButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
   chatItem: {
     flexDirection: "row",
     padding: 16,
@@ -243,14 +251,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E5EA",
     backgroundColor: "#FFFFFF",
   },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
+  avatarContainer: { marginRight: 12 },
+  avatar: { width: 50, height: 50, borderRadius: 25 },
   defaultAvatar: {
     width: 50,
     height: 50,
@@ -259,25 +261,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  avatarText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  chatContent: {
-    flex: 1,
-  },
+  avatarText: { color: "#FFFFFF", fontSize: 18, fontWeight: "bold" },
+  chatContent: { flex: 1 },
   chatHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
   },
-  userName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000000",
-    flex: 1,
-  },
+  userName: { flex: 1, fontSize: 16, fontWeight: "600", color: "#000000" },
   userRole: {
     fontSize: 12,
     color: "#8E8E93",
@@ -287,37 +278,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 8,
   },
-  timestamp: {
-    fontSize: 12,
-    color: "#8E8E93",
-  },
-  lastMessage: {
-    fontSize: 14,
-    color: "#8E8E93",
-  },
-  emptyContainer: {
-    flex: 1,
-  },
+  timestamp: { fontSize: 12, color: "#8E8E93" },
+  lastMessage: { fontSize: 14, color: "#8E8E93" },
+  emptyContainer: { flex: 1 },
   emptyState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 40,
   },
-  emptyText: {
-    fontSize: 16,
-    color: "#8E8E93",
-    marginBottom: 8,
-  },
+  emptyText: { fontSize: 16, color: "#8E8E93", marginBottom: 8 },
   emptySubText: {
     fontSize: 14,
     color: "#8E8E93",
     textAlign: "center",
     lineHeight: 20,
-  },
-  inputToolbar: {
-    borderTopWidth: 1,
-    borderTopColor: "#E5E5EA",
-    backgroundColor: "#FFFFFF",
   },
 });
