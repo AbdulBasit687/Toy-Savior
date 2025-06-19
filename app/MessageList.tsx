@@ -1,124 +1,323 @@
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from 'react-native';
+import auth from "@react-native-firebase/auth";
+import firestore, {
+  FirebaseFirestoreTypes,
+} from "@react-native-firebase/firestore";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { createDummyChat } from "../utils/chatUtils"; // Adjust the import path as needed
 
-dayjs.extend(relativeTime);
+interface Chat {
+  id: string;
+  participants: string[];
+  participantDetails: Record<string, ParticipantDetail>;
+  lastMessage?: {
+    text: string;
+    timestamp: FirebaseFirestoreTypes.Timestamp;
+    senderId: string;
+  };
+  updatedAt: FirebaseFirestoreTypes.Timestamp;
+}
 
-export default function MessageList() {
-  const [chats, setChats] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface ParticipantDetail {
+  firstName: string;
+  lastName: string;
+  photoURL?: string;
+  role: string;
+}
+
+const ChatListScreen = () => {
   const router = useRouter();
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [loading, setLoading] = useState(true);
   const currentUser = auth().currentUser;
 
   useEffect(() => {
-  const uid = auth().currentUser?.uid;
-  console.log("Current logged-in UID:", uid);
-  if (!currentUser) return;
+    if (!currentUser) return;
 
-  try {
     const unsubscribe = firestore()
-      .collection('chats')
-      .where('participants', 'array-contains', currentUser.uid)
-    //   .orderBy('updatedAt', 'desc')
+      .collection("chats")
+      .where("participants", "array-contains", currentUser.uid)
+      .orderBy("updatedAt", "desc")
       .onSnapshot(
-        async (snapshot) => {
-          if (!snapshot || !snapshot.docs) {
-            console.log("Snapshot is null or malformed");
-            setLoading(false);
-            return;
-          }
-
-          console.log("Snapshot size:", snapshot.size);
-          snapshot.forEach(doc => console.log("Chat ID:", doc.id, doc.data()));
-
-          const chatList = await Promise.all(snapshot.docs.map(async (doc) => {
-            const data = doc.data();
-            const otherUserId = data.participants.find((id: string) => id !== currentUser.uid);
-
-            let name = 'Unknown';
-            let photoURL = '';
-
-            try {
-              const userDoc = await firestore().collection('users').doc(otherUserId).get();
-              if (userDoc.exists) {
-                const userData = userDoc.data();
-                name = `${userData?.firstName ?? ''} ${userData?.lastName ?? ''}`;
-                photoURL = userData?.photoURL ?? '';
-              }
-            } catch (err) {
-              console.log('Error fetching user info:', err);
-            }
-
-            return {
-              id: doc.id,
-              name,
-              photoURL,
-              lastMessage: data.lastMessage ?? '',
-              updatedAt: data.updatedAt?.toDate() ?? new Date(),
-            };
-          }));
-
+        (snapshot) => {
+          const chatList = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Chat[];
           setChats(chatList);
           setLoading(false);
         },
         (error) => {
-          console.error("❌ Firestore onSnapshot error:", error.message);
+          console.error("Error fetching chats:", error);
           setLoading(false);
         }
       );
 
-    return () => unsubscribe();
-  } catch (error) {
-    console.error("🔥 Outer onSnapshot error:", error.message);
-    setLoading(false);
-  }
-}, []);
+    return unsubscribe;
+  }, [currentUser]);
 
+  const getOtherParticipant = (
+    participantDetails: Record<string, ParticipantDetail>
+  ): ParticipantDetail => {
+    if (!currentUser) return {} as ParticipantDetail;
+
+    const otherUid = Object.keys(participantDetails).find(
+      (uid) => uid !== currentUser.uid
+    );
+
+    return otherUid ? participantDetails[otherUid] : ({} as ParticipantDetail);
+  };
+
+  const formatTime = (
+    timestamp: FirebaseFirestoreTypes.Timestamp | undefined
+  ): string => {
+    if (!timestamp) return "";
+
+    const messageTime = timestamp.toDate();
+    const now = new Date();
+    const diffInHours =
+      (now.getTime() - messageTime.getTime()) / (1000 * 60 * 60);
+
+    if (diffInHours < 24) {
+      return messageTime.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } else {
+      return messageTime.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+    }
+  };
+
+  const renderChatItem = ({ item }: { item: Chat }) => {
+    const otherParticipant = getOtherParticipant(item.participantDetails);
+
+    return (
+      <TouchableOpacity
+        style={styles.chatItem}
+        onPress={() =>
+          router.push({
+            pathname: "/ChatScreen",
+            params: {
+              chatId: item.id,
+              chatName: `${otherParticipant.firstName} ${otherParticipant.lastName}`,
+              otherUser: JSON.stringify(otherParticipant),
+            },
+          })
+        }
+      >
+        <View style={styles.avatarContainer}>
+          {otherParticipant.photoURL ? (
+            <Image
+              source={{ uri: otherParticipant.photoURL }}
+              style={styles.avatar}
+            />
+          ) : (
+            <View style={styles.defaultAvatar}>
+              <Text style={styles.avatarText}>
+                {otherParticipant.firstName?.charAt(0)}
+                {otherParticipant.lastName?.charAt(0)}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.chatContent}>
+          <View style={styles.chatHeader}>
+            <Text style={styles.userName}>
+              {otherParticipant.firstName} {otherParticipant.lastName}
+            </Text>
+            <Text style={styles.userRole}>{otherParticipant.role}</Text>
+            <Text style={styles.timestamp}>
+              {formatTime(item.lastMessage?.timestamp)}
+            </Text>
+          </View>
+
+          <Text style={styles.lastMessage} numberOfLines={1}>
+            {item.lastMessage?.text || "No messages yet"}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const handleCreateDummyChat = async () => {
+    try {
+      setLoading(true);
+      await createDummyChat();
+      Alert.alert(
+        "Success",
+        "Dummy chat created successfully! Messages will appear over the next 20 seconds.",
+        [{ text: "OK" }]
+      );
+    } catch (error: any) {
+      Alert.alert("Error", "Failed to create dummy chat: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#F4B731" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
   }
 
   return (
-    <FlatList
-      data={chats}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <TouchableOpacity onPress={() => router.push(({
-    pathname: '/ChatScreen',
-    params: {
-      item: item,
-    }
-  }))}>
-          <View style={{
-            flexDirection: 'row',
-            padding: 16,
-            alignItems: 'center',
-            borderBottomWidth: 1,
-            borderColor: '#ddd'
-          }}>
-            <Image
-              source={{ uri: item.photoURL || 'https://via.placeholder.com/50' }}
-              style={{ width: 50, height: 50, borderRadius: 25, marginRight: 12 }}
-            />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{item.name}</Text>
-              <Text numberOfLines={1} style={{ color: '#666' }}>{item.lastMessage}</Text>
-              <Text style={{ fontSize: 10, color: 'gray' }}>
-                {dayjs(item.updatedAt).fromNow()}
-              </Text>
-            </View>
+    <View style={styles.container}>
+      {/* Create Dummy Chat Button */}
+      <TouchableOpacity
+        style={styles.dummyButton}
+        onPress={handleCreateDummyChat}
+        disabled={loading}
+      >
+        <Text style={styles.dummyButtonText}>
+          {loading ? "Creating..." : "Create Dummy Chat (Khalid ↔ Sarim)"}
+        </Text>
+      </TouchableOpacity>
+
+      <FlatList
+        data={chats}
+        renderItem={renderChatItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={
+          chats.length === 0 ? styles.emptyContainer : null
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No chats yet</Text>
+            <Text style={styles.emptySubText}>
+              Use the button above to create a dummy chat for testing
+            </Text>
           </View>
-        </TouchableOpacity>
-      )}
-    />
+        }
+      />
+    </View>
   );
-}
+};
+
+export default ChatListScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dummyButton: {
+    backgroundColor: "#007AFF",
+    marginHorizontal: 16,
+    marginVertical: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  dummyButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  chatItem: {
+    flexDirection: "row",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+    backgroundColor: "#FFFFFF",
+  },
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  defaultAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#007AFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  chatContent: {
+    flex: 1,
+  },
+  chatHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000000",
+    flex: 1,
+  },
+  userRole: {
+    fontSize: 12,
+    color: "#8E8E93",
+    backgroundColor: "#F2F2F7",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginRight: 8,
+  },
+  timestamp: {
+    fontSize: 12,
+    color: "#8E8E93",
+  },
+  lastMessage: {
+    fontSize: 14,
+    color: "#8E8E93",
+  },
+  emptyContainer: {
+    flex: 1,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#8E8E93",
+    marginBottom: 8,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: "#8E8E93",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  inputToolbar: {
+    borderTopWidth: 1,
+    borderTopColor: "#E5E5EA",
+    backgroundColor: "#FFFFFF",
+  },
+});
