@@ -108,7 +108,7 @@ const handleReject = async (requestId: string) => {
                 <Text style={styles.cardDesc} numberOfLines={2}>{item.description} <Text style={styles.seeMore}>See More</Text></Text>
                 <Text style={styles.uploadedBy}>Uploaded By : <Text style={styles.cardDesc}>{item.userName || 'Unknown'}</Text></Text>
                 <Text style={styles.metaText}>
-  🕒 {dayjs(item.createdAt?.toDate?.()).fromNow()} – Downtown Tech Hub
+  🕒 {dayjs(item.createdAt?.toDate?.()).fromNow()} – {item.area || 'Unknown Area'}
 </Text>
               </View>
             </View>

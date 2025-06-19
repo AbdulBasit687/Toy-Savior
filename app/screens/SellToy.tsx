@@ -123,6 +123,7 @@ export default function SellToy() {
         userEmail: userInfo.email,
         image: imageUrl,
         category: 'Newly Uploaded',
+        categoryType: toyType,  
         createdAt: firestore.FieldValue.serverTimestamp(),
       };
 
@@ -203,7 +204,7 @@ export default function SellToy() {
         </TouchableOpacity>
         {showCategoryDropdown && (
           <View style={styles.dropdownList}>
-            {["0-5 years", "6-10 years", "11-15 years", "16-20 years", "Drone", "Console"].map((type) => (
+            {["0-5 years", "6-10 years", "11-15 years", "Drone", "Console"].map((type) => (
               <TouchableOpacity
                 key={type}
                 onPress={() => {

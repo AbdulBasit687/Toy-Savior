@@ -3,35 +3,43 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import UploadOptionsSheet from '../../components/UploadOptionsSheet';
 
-export default function RepairRequestsList() {
-  const [sheetVisible, setSheetVisible] = useState(false);
-  const [requests, setRequests] = useState([]);
+
+export default function DonateList() {
+  const [donations, setDonations] = useState([]);
   const router = useRouter();
+    const [sheetVisible, setSheetVisible] = useState(false);
 
   useEffect(() => {
     const currentUser = auth().currentUser;
     if (!currentUser) return;
 
     const unsubscribe = firestore()
-      .collection('repairRequests')
+      .collection('donatedToys')
       .where('userId', '==', currentUser.uid)
       .onSnapshot(snapshot => {
         if (!snapshot || !snapshot.docs) return;
 
         const data = snapshot.docs.map(doc => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
         }));
 
-        setRequests(data);
+        setDonations(data);
       });
 
     return () => unsubscribe();
   }, []);
-  const handleOptionSelect = (option: string) => {
+   const handleOptionSelect = (option: string) => {
   setSheetVisible(false);
   switch (option) {
     case 'repair':
@@ -51,66 +59,62 @@ export default function RepairRequestsList() {
       style={styles.card}
       onPress={() =>
         router.push({
-          pathname: '/screens/RequestRepairResultScreen',
-          params: { data: JSON.stringify(item) }
+          pathname: '/screens/DonateToyResultScreen',
+          params: { data: JSON.stringify(item) },
         })
       }
     >
-      <Image source={{ uri: item.imageUrl }} style={styles.image} />
+      <Image source={{ uri: item.imageUrls?.[0] || '' }} style={styles.image} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.title}>{item.toyName}</Text>
-        <Text style={styles.subtitle}>{item.toyType} | {item.urgency}</Text>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.subtitle}>{item.category}</Text>
         <Text numberOfLines={2} style={styles.desc}>{item.description}</Text>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={20} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Repair Requests</Text>
-        <View style={{ width: 24 }} />
-      </View>
+    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+     <View style={styles.header}>
+  <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+    <Ionicons name="chevron-back" size={20} color="#000" />
+  </TouchableOpacity>
+  <Text style={styles.headerTitle}>Donate Requests</Text>
+  <View style={{ width: 24 }} />
+</View>
 
       <FlatList
-        data={requests}
+        data={donations}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.emptyText}>No repair requests found.</Text>}
         contentContainerStyle={{ padding: 16 }}
+        ListEmptyComponent={<Text>No donation requests found.</Text>}
       />
       <View style={styles.footer}>
-              <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/dashboard')}>
-                <Image source={require('../../assets/icons/home.png')} style={styles.footerIcon} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.footerItem} onPress={() => setSheetVisible(true)}>
-                <Image source={require('../../assets/icons/upload.png')} style={styles.footerIconupload} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.footerItem}>
-                <Image source={require('../../assets/icons/message.png')} style={styles.footerIcon} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/ProfileScreen')}>
-                <Image source={require('../../assets/icons/profile.png')} style={styles.footerIconprofile} />
-              </TouchableOpacity>
-            </View>
-      
-            <UploadOptionsSheet
-              visible={sheetVisible}
-              onClose={() => setSheetVisible(false)}
-              onSelect={handleOptionSelect}
-            />
+                    <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/dashboard')}>
+                      <Image source={require('../../assets/icons/home.png')} style={styles.footerIcon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.footerItem} onPress={() => setSheetVisible(true)}>
+                      <Image source={require('../../assets/icons/upload.png')} style={styles.footerIconupload} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.footerItem}>
+                      <Image source={require('../../assets/icons/message.png')} style={styles.footerIcon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/ProfileScreen')}>
+                      <Image source={require('../../assets/icons/profile.png')} style={styles.footerIconprofile} />
+                    </TouchableOpacity>
+                  </View>
+            
+                  <UploadOptionsSheet
+                    visible={sheetVisible}
+                    onClose={() => setSheetVisible(false)}
+                    onSelect={handleOptionSelect}
+                  />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff'
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -135,7 +139,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 12,
     marginBottom: 12,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#F5F5F5',
     borderRadius: 10,
     alignItems: 'center',
   },
@@ -143,7 +147,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 6,
-    marginRight: 12
+    marginRight: 12,
   },
   title: {
     fontWeight: 'bold',
@@ -154,19 +158,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginVertical: 2,
-    fontFamily: 'ABeeZee-Regular'
+    fontFamily: 'ABeeZee-Regular',
   },
   desc: {
     fontSize: 12,
     color: '#333',
-    fontFamily: 'ABeeZee-Regular'
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 40,
-    fontSize: 14,
-    fontFamily: 'ABeeZee-Regular'
+    fontFamily: 'ABeeZee-Regular',
   },
   footer: {
     flexDirection: 'row',

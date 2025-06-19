@@ -20,74 +20,134 @@ export default function HomeExplore() {
   const [newlyUploaded, setNewlyUploaded] = useState([]);
   const [donatedToys, setDonatedToys] = useState([]);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [allToys, setAllToys] = useState([]);
+  const [searchText, setSearchText] = useState('');
+const [searchResults, setSearchResults] = useState([]);
+const handleSearch = (text: string) => {
+  setSearchText(text);
 
-  useEffect(() => {
-    const unsubscribeFeatured = firestore()
-      .collection('products')
-      .where('category', '==', 'Featured')
-      .onSnapshot(snapshot => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setFeatured(data);
-      });
+  if (text.trim() === '') {
+    setSearchResults([]);
+    return;
+  }
 
-    const unsubscribeNew = firestore()
-      .collection('products')
-      .where('category', '==', 'Newly Uploaded')
-      .onSnapshot(snapshot => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setNewlyUploaded(data);
-      });
+  const allData = [...featured, ...newlyUploaded, ...donatedToys, ...allToys];
+  const filtered = allData.filter(toy =>
+    toy?.title?.toLowerCase().includes(text.toLowerCase())
+  );
 
-    const unsubscribeDonated = firestore()
-  .collection('donatedToys')
+  setSearchResults(filtered);
+};
+useEffect(() => {
+  const unsubscribeBestCondition = firestore()
+    .collection('products')
+    .onSnapshot(snapshot => {
+      if (!snapshot || !snapshot.docs) return;
+
+      const data = snapshot.docs
+        .map(doc => {
+          const raw = doc.data();
+          const condition = parseInt(raw.condition);
+          return { id: doc.id, ...raw, condition };
+        })
+        .filter(item => item.condition > 6);
+
+      setFeatured(data);
+    });
+
+  const unsubscribeNew = firestore()
+    .collection('products')
+    .where('category', '==', 'Newly Uploaded')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snapshot => {
+      if (!snapshot || !snapshot.docs) return;
+
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setNewlyUploaded(data);
+    });
+
+  const unsubscribeDonated = firestore()
+    .collection('donatedToys')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snapshot => {
+      if (!snapshot || !snapshot.docs) return;
+
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDonatedToys(data);
+    });
+    const unsubscribeAll = firestore()
+  .collection('products')
   .orderBy('createdAt', 'desc')
-  .limit(2)
   .onSnapshot(snapshot => {
+    if (!snapshot || !snapshot.docs) return;
+
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setDonatedToys(data);
+    setAllToys(data);
   });
 
-    return () => {
-      unsubscribeFeatured();
-      unsubscribeNew();
-      unsubscribeDonated();
-    };
-  }, []);
+  return () => {
+    unsubscribeBestCondition();
+    unsubscribeNew();
+    unsubscribeDonated();
+      unsubscribeAll();
+  };
+}, []);
+
+
 
   const handleOptionSelect = (option: string) => {
-    setSheetVisible(false);
-    switch (option) {
-      case 'repair':
-        router.push('/screens/RequestRepair');
-        break;
-      case 'sell':
-        router.push('/screens/SellToy');
-        break;
-      case 'donate':
-        router.push('/screens/DonateToy');
-        break;
-    }
-  };
+  setSheetVisible(false);
+  switch (option) {
+    case 'repair':
+      router.push('/screens/RequestRepair');
+      break;
+    case 'sell':
+      router.push('/screens/SellToy');
+      break;
+    case 'donate':
+      router.push('/screens/DonateToy');
+      break;
+  }
+};
 
   const renderProductCard = (item) => (
-    <View key={item.id} style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.cardImage} />
-      <Text style={styles.cardTitle}>{item.title || 'No Title'}</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8 }}>
-        <Text style={styles.cardPrice}>Rs. {item.price || 'N/A'}</Text>
-        <Ionicons name="location-outline" size={12} color="#555" style={{ marginLeft: 6, marginRight: 2 }} />
-        <Text style={{ fontSize: 12, color: '#555' }}>{item.area || 'Unknown'}</Text>
-      </View>
+  <TouchableOpacity
+    key={item.id}
+    onPress={() =>
+      router.push({
+        pathname: '/screens/SellToyResultScreen',
+        params: { data: JSON.stringify({ ...item, fromCategory: true }) }
+      })
+    }
+    style={styles.card}
+  >
+    <Image source={{ uri: item.image }} style={styles.cardImage} />
+    <Text style={styles.cardTitle}>{item.title || 'No Title'}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8 }}>
+      <Text style={styles.cardPrice}>Rs. {item.price || 'N/A'}</Text>
+      <Ionicons name="location-outline" size={12} color="#555" style={{ marginLeft: 6, marginRight: 2 }} />
+      <Text style={{ fontSize: 12, color: '#555' }}>{item.area || 'Unknown'}</Text>
     </View>
-  );
+  </TouchableOpacity>
+);
   const renderDonatedCard = (item) => (
-  <View key={item.id} style={styles.card}>
+  <TouchableOpacity
+    key={item.id}
+    onPress={() =>
+      router.push({
+        pathname: '/screens/DonateToyResultScreen',
+        params: { data: JSON.stringify({ ...item, fromCategory: true }),
+      }
+      })
+    }
+    style={styles.card}
+  >
     <Image
       source={{ uri: item.imageUrls?.[0] || '' }}
       style={styles.cardImage}
     />
     <Text style={styles.cardTitle}>{item.title || 'No Title'}</Text>
-  </View>
+  </TouchableOpacity>
 );
 
   return (
@@ -99,18 +159,32 @@ export default function HomeExplore() {
       >
         <View style={styles.header}>
           <TouchableOpacity style={styles.dropdown}>
-            <Text style={styles.dropdownText}>Repair Request</Text>
-            <Image source={require('../assets/icons/down.png')} style={styles.dropdownIcon} />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Image source={require('../assets/icons/heart.png')} style={styles.heartIcon} />
+            <Text style={styles.dropdownText}>ToySavior</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={18} color="#555" style={{ marginHorizontal: 8 }} />
-          <TextInput placeholder="Search" placeholderTextColor="#888" style={styles.searchInput} />
-        </View>
+  <Ionicons name="search-outline" size={18} color="#555" style={{ marginHorizontal: 8 }} />
+  <TextInput
+    placeholder="Search"
+    placeholderTextColor="#888"
+    style={styles.searchInput}
+    value={searchText}
+    onChangeText={handleSearch}
+  />
+</View>
+{searchText.trim() !== '' && (
+  <View style={{ marginTop: 10 }}>
+    <Text style={styles.sectionTitle}>Search Results</Text>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
+      {searchResults.length > 0 ? (
+        searchResults.slice(0, 6).map(renderProductCard)
+      ) : (
+        <Text style={{ color: '#999', marginLeft: 12 }}>No matches found</Text>
+      )}
+    </ScrollView>
+  </View>
+)}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Categories</Text>
@@ -120,8 +194,9 @@ export default function HomeExplore() {
           {[{ label: '0-5\nyears', icon: require('../assets/icons/0-5.png'), route: '/screens/CategoryAge0to5' },
             { label: '6-10\nyears', icon: require('../assets/icons/6-10.png'), route: '/screens/CategoryAge6to10' },
             { label: '11-15\nyears', icon: require('../assets/icons/11-15.png'), route: '/screens/CategoryAge11to15' },
-            { label: 'Drones', icon: require('../assets/icons/drone.png'), route: '/screens/Drones' },
-            { label: 'Consoles', icon: require('../assets/icons/console.png'), route: '/screens/Console' }
+            { label: 'Drones', icon: require('../assets/icons/drone.png'), route: '/screens/CategoryDrones' },
+            { label: 'Consoles', icon: require('../assets/icons/console.png'), route: '/screens/CategoryConsole' },
+            { label: 'Rides\nMachines', icon: require('../assets/icons/rides.png'), },
           ].map((item, index) => (
             <TouchableOpacity
               key={index}
@@ -135,33 +210,94 @@ export default function HomeExplore() {
         </ScrollView>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Featured</Text>
-          <Text style={styles.seeAll}>See All</Text>
+<Text style={styles.sectionTitle}>Best Condition Toys</Text>
+          <TouchableOpacity onPress={() => router.push('/screens/BestConditionList')}>
+    <Text style={styles.seeAll}>See All</Text>
+  </TouchableOpacity>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
-          {featured.map(renderProductCard)}
-        </ScrollView>
+       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
+  {featured.slice(0, 4).map(renderProductCard)}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Newly Uploaded</Text>
-          <Text style={styles.seeAll}>See All</Text>
-        </View>
+  {featured.length > 4 && (
+    <TouchableOpacity
+      onPress={() => router.push('/screens/BestConditionList')}
+      style={[styles.card, styles.seeMoreCard]}
+    >
+      <Ionicons name="arrow-forward-circle" size={50} color="#F4B731" />
+      <Text style={{ textAlign: 'center', fontWeight: 'bold', marginTop: 6 }}>
+        See All
+      </Text>
+    </TouchableOpacity>
+  )}
+</ScrollView>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
-          {newlyUploaded.map(renderProductCard)}
-        </ScrollView>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Donated Toys</Text>
-         <TouchableOpacity onPress={() => router.push('/screens/DonateRequestsList')}>
-  <Text style={styles.seeAll}>See All</Text>
-</TouchableOpacity>
-
-        </View>
+       <View style={styles.section}>
+  <Text style={styles.sectionTitle}>Newly Uploaded</Text>
+  <TouchableOpacity onPress={() => router.push('/screens/NewlyUploadedList')}>
+    <Text style={styles.seeAll}>See All</Text>
+  </TouchableOpacity>
+</View>
 
 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
-  {donatedToys.map(renderDonatedCard)}
+  {newlyUploaded.slice(0, 4).map(renderProductCard)}
+
+  {newlyUploaded.length > 4 && (
+    <TouchableOpacity
+      onPress={() => router.push('/screens/NewlyUploadedList')}
+      style={[styles.card, styles.seeMoreCard]}
+    >
+      <Ionicons name="arrow-forward-circle" size={50} color="#F4B731" />
+      <Text style={{ textAlign: 'center', fontWeight: 'bold', marginTop: 6 }}>
+        See All
+      </Text>
+    </TouchableOpacity>
+  )}
+</ScrollView>
+<View style={styles.section}>
+  <Text style={styles.sectionTitle}>All Toys</Text>
+  <TouchableOpacity onPress={() => router.push('/screens/AllToysList')}>
+    <Text style={styles.seeAll}>See All</Text>
+  </TouchableOpacity>
+</View>
+
+<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
+  {allToys.slice(0, 4).map(renderProductCard)}
+
+  {allToys.length > 4 && (
+    <TouchableOpacity
+      onPress={() => router.push('/screens/AllToysList')}
+      style={[styles.card, styles.seeMoreCard]}
+    >
+      <Ionicons name="arrow-forward-circle" size={50} color="#F4B731" />
+      <Text style={{ textAlign: 'center', fontWeight: 'bold', marginTop: 6 }}>
+        See All
+      </Text>
+    </TouchableOpacity>
+  )}
+</ScrollView>
+
+        <View style={styles.section}>
+  <Text style={styles.sectionTitle}>Donated Toys</Text>
+  <TouchableOpacity onPress={() => router.push('/screens/DonateRequestsList')}>
+    <Text style={styles.seeAll}>See All</Text>
+  </TouchableOpacity>
+</View>
+
+<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cardRow}>
+  {donatedToys.slice(0, 4).map(renderDonatedCard)}
+
+  {donatedToys.length > 4 && (
+    <TouchableOpacity
+      onPress={() => router.push('/screens/DonateRequestsList')}
+      style={[styles.card, styles.seeMoreCard]}
+    >
+      <Ionicons name="arrow-forward-circle" size={50} color="#F4B731" />
+      <Text style={{ textAlign: 'center', fontWeight: 'bold', marginTop: 6 }}>
+        See All
+      </Text>
+    </TouchableOpacity>
+  )}
 </ScrollView>
 </ScrollView>
 
@@ -248,12 +384,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 18,
     fontFamily: 'BalooTammudu2-SemiBold',
   },
   seeAll: {
     color: '#555',
-    fontSize: 12,
+    fontSize: 16,
   },
   categoryRow: {
     flexDirection: 'row',
@@ -264,10 +400,14 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   categoryIcon: {
-    width: 50,
-    height: 50,
-    marginBottom: 6,
-  },
+  width: 56,
+  height: 56,
+  marginBottom: 6,
+  borderRadius: 28, // makes it perfectly circular
+  resizeMode: 'cover',
+  borderWidth: 1,
+  borderColor: '#ddd', // optional: add border for consistency
+},
   categoryLabel: {
     fontSize: 12,
     textAlign: 'center',
@@ -280,7 +420,7 @@ const styles = StyleSheet.create({
   card: {
     width: 162,
     height: 280,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5',
     marginRight: 22,
     borderRadius: 10,
     overflow: 'hidden',
@@ -288,6 +428,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    //borderWidth: 1, // ✅ add this
+   // borderColor: '#ccc', // ✅ subtle grey border
   },
   cardImage: {
     width: '100%',
@@ -340,4 +482,8 @@ const styles = StyleSheet.create({
     width: 16,
     height: 23,
   },
+  seeMoreCard: {
+  justifyContent: 'center',
+  alignItems: 'center',
+},
 });

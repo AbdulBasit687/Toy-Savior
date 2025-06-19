@@ -59,6 +59,10 @@ export default function RequestRepairResultScreen() {
 
         {/* Toy Name */}
         <Text style={styles.toyName}>{parsedData.toyName}</Text>
+        <View style={styles.inlineBox}>
+  <Text style={styles.inlineLabel}>Area</Text>
+  <Text style={styles.inlineValue}>{parsedData.area || 'Not specified'}</Text>
+</View>
 
         {/* Category */}
         <View style={styles.inlineBox}>
@@ -71,6 +75,16 @@ export default function RequestRepairResultScreen() {
   <Text style={[styles.inlineLabel, { color: '#000' }]}>Urgency Of Repair</Text>
   <Text style={[styles.inlineValue, { fontWeight: 'bold' }]}>{parsedData.urgency}</Text>
 </View>
+{/* Placeholder Location */}
+       <View style={styles.inlineBox}>
+  <Text style={styles.inlineLabel}>Price Range</Text>
+  <Text style={styles.inlineValue}>{parsedData.priceRange || 'Not specified'}</Text>
+</View>
+        <View style={styles.infoBlock}>
+  <Text style={styles.sectionLabel}>Full Location</Text>
+  <Text style={styles.sectionText}>{parsedData.location || 'Not provided'}</Text>
+</View>
+
 
         {/* Description */}
         <View style={styles.infoBlock}>
@@ -78,14 +92,7 @@ export default function RequestRepairResultScreen() {
           <Text style={styles.sectionText}>{parsedData.description}</Text>
         </View>
 
-        {/* Placeholder Location */}
-        <View style={styles.infoBlock}>
-          <Text style={styles.sectionLabel}>Location</Text>
-          <Text style={styles.sectionText}>
-            Muhammad Ali Jinah Rd, Gazdarabad Preedy Quarters, Karachi, Karachi City, Sindh, Pakistan
-          </Text>
-        </View>
-
+        
         {/* Upload Again */}
         
       </ScrollView>
