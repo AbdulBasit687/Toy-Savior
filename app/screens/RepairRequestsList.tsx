@@ -3,7 +3,7 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import UploadOptionsSheet from '../../components/UploadOptionsSheet';
 
 export default function RepairRequestsList() {
@@ -45,10 +45,30 @@ export default function RepairRequestsList() {
       break;
   }
 };
-
+const handleDelete = (id: string) => {
+  Alert.alert(
+    "Confirm Delete",
+    "Are you sure you want to delete this repair request?",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await firestore().collection('repairRequests').doc(id).delete();
+          } catch (error) {
+            console.error("Error deleting item:", error);
+          }
+        }
+      }
+    ]
+  );
+};
   const renderItem = ({ item }) => (
+  <View style={styles.card}>
     <TouchableOpacity
-      style={styles.card}
+      style={{ flex: 1 }}
       onPress={() =>
         router.push({
           pathname: '/screens/RequestRepairResultScreen',
@@ -56,14 +76,24 @@ export default function RepairRequestsList() {
         })
       }
     >
-      <Image source={{ uri: item.imageUrl }} style={styles.image} />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.title}>{item.toyName}</Text>
-        <Text style={styles.subtitle}>{item.toyType} | {item.urgency}</Text>
-        <Text numberOfLines={2} style={styles.desc}>{item.description}</Text>
+      <View style={{ flexDirection: 'row' }}>
+        <Image source={{ uri: item.imageUrl }} style={styles.image} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>{item.toyName}</Text>
+          <Text style={styles.subtitle}>{item.toyType} | {item.urgency}</Text>
+          <Text numberOfLines={2} style={styles.desc}>{item.description}</Text>
+        </View>
       </View>
     </TouchableOpacity>
-  );
+
+    <TouchableOpacity
+      onPress={() => handleDelete(item.id)}
+      style={styles.deleteButton}
+    >
+      <Ionicons name="trash" size={20} color="#fff" />
+    </TouchableOpacity>
+  </View>
+);
 
   return (
     <View style={styles.container}>
@@ -200,4 +230,14 @@ const styles = StyleSheet.create({
     width: 16,
     height: 23,
   },
+  deleteButton: {
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  backgroundColor: '#ff4d4d',
+  padding: 6,
+  borderRadius: 20,
+  zIndex: 999,
+},
+
 });

@@ -4,12 +4,13 @@ import firestore from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import UploadOptionsSheet from '../../components/UploadOptionsSheet';
 
@@ -53,10 +54,30 @@ export default function DonateList() {
       break;
   }
 };
-
+const handleDelete = (id: string) => {
+  Alert.alert(
+    "Confirm Delete",
+    "Are you sure you want to delete this donation request?",
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await firestore().collection('donatedToys').doc(id).delete();
+          } catch (error) {
+            console.error("Error deleting donation:", error);
+          }
+        }
+      }
+    ]
+  );
+};
   const renderItem = ({ item }) => (
+  <View style={styles.card}>
     <TouchableOpacity
-      style={styles.card}
+      style={{ flex: 1 }}
       onPress={() =>
         router.push({
           pathname: '/screens/DonateToyResultScreen',
@@ -64,14 +85,25 @@ export default function DonateList() {
         })
       }
     >
-      <Image source={{ uri: item.imageUrls?.[0] || '' }} style={styles.image} />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.subtitle}>{item.category}</Text>
-        <Text numberOfLines={2} style={styles.desc}>{item.description}</Text>
+      <View style={{ flexDirection: 'row' }}>
+        <Image source={{ uri: item.imageUrls?.[0] || '' }} style={styles.image} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>{item.title}</Text>
+          <Text style={styles.subtitle}>{item.category}</Text>
+          <Text numberOfLines={2} style={styles.desc}>{item.description}</Text>
+        </View>
       </View>
     </TouchableOpacity>
-  );
+
+    <TouchableOpacity
+      onPress={() => handleDelete(item.id)}
+      style={styles.deleteButton}
+    >
+      <Ionicons name="trash" size={20} color="#fff" />
+    </TouchableOpacity>
+  </View>
+);
+
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
@@ -197,4 +229,14 @@ const styles = StyleSheet.create({
     width: 16,
     height: 23,
   },
+  deleteButton: {
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  backgroundColor: '#ff4d4d',
+  padding: 6,
+  borderRadius: 20,
+  zIndex: 999,
+},
+
 });

@@ -3,13 +3,13 @@ import firestore from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Dimensions,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
   },
   card: {
     width: 161,
-    height: 281,
-    backgroundColor: '#fff',
+    height: 290,
+    backgroundColor: '#F5F5F5',
     margin: '1.5%',
     borderRadius: 12,
     overflow: 'hidden',
