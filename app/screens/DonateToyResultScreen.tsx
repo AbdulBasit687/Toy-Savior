@@ -18,6 +18,7 @@ import {
 export default function DonateToyResultScreen() {
   const { data, from } = useLocalSearchParams();
   
+  
   if (!data) {
     return (
       <View style={styles.container}>
@@ -30,6 +31,7 @@ export default function DonateToyResultScreen() {
   }
 
   const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  const isFromCategory = parsedData?.fromCategory === true;
 
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(parsedData.title || '');
@@ -78,7 +80,7 @@ export default function DonateToyResultScreen() {
         <TouchableOpacity onPress={() => router.replace('/dashboard')} style={styles.backIcon}>
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-       {from !== 'view' && !isEditing ? (
+      {!isFromCategory && !isEditing ? (
   <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
     <Ionicons name="create-outline" size={20} color="#000" />
   </TouchableOpacity>

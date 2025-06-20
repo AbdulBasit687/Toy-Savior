@@ -5,14 +5,18 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Linking } from 'react-native';
+import UploadOptionsSheet from '../../components/UploadOptionsSheet';
+import { getPriceComparison } from '../services/priceComparisonAPI'; // ✅ New import
+//import React from 'react';
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 // Extend dayjs
@@ -21,7 +25,11 @@ dayjs.extend(duration);
 
 export default function SellToyResultScreen() {
   const { data } = useLocalSearchParams();
+    const [sheetVisible, setSheetVisible] = useState(false);
+   const [comparisonData, setComparisonData] = useState<any[]>([]);
+  const [loadingComparison, setLoadingComparison] = useState(true);
   const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+const isFromCategory = parsedData?.fromCategory === true;
 
   const getMemberSinceText = (createdAtString: string) => {
     const createdAt = dayjs(createdAtString);
@@ -34,7 +42,33 @@ export default function SellToyResultScreen() {
       return `${diffInMonths} month${diffInMonths === 1 ? '' : 's'} ago`;
     }
   };
-
+useEffect(() => {
+  const fetchComparison = async () => {
+    try {
+      const result = await getPriceComparison(parsedData?.title || '');
+      setComparisonData(result);
+    } catch (err) {
+      console.error("Error fetching comparison data:", err);
+    } finally {
+      setLoadingComparison(false);
+    }
+  };
+  fetchComparison();
+}, []);
+ const handleOptionSelect = (option: string) => {
+  setSheetVisible(false);
+  switch (option) {
+    case 'repair':
+      router.push('/screens/RequestRepair');
+      break;
+    case 'sell':
+      router.push('/screens/SellToy');
+      break;
+    case 'donate':
+      router.push('/screens/DonateToy');
+      break;
+  }
+};
   const handleEdit = () => {
     router.push({
       pathname: '/screens/SellToy',
@@ -55,9 +89,11 @@ export default function SellToyResultScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.editBtn} onPress={handleEdit}>
-          <Ionicons name="create-outline" size={20} color="#000" />
-        </TouchableOpacity>
+       {!isFromCategory && (
+  <TouchableOpacity style={styles.editBtn} onPress={handleEdit}>
+    <Ionicons name="create-outline" size={20} color="#000" />
+  </TouchableOpacity>
+)}
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -90,6 +126,32 @@ export default function SellToyResultScreen() {
 
         <Text style={styles.sectionTitle}>Description</Text>
         <Text style={styles.description}>{parsedData.description}</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Price Comparison</Text>
+
+{loadingComparison ? (
+  <ActivityIndicator size="large" color="#F4B731" />
+) : comparisonData.length > 0 ? (
+  <View style={styles.table}>
+    <View style={[styles.row, styles.headerRow]}>
+      <Text style={styles.cell}>Platform</Text>
+      <Text style={styles.cell}>Price</Text>
+      <Text style={styles.cell}>Link</Text>
+    </View>
+    {comparisonData.map((item, index) => (
+      <View style={styles.row} key={index}>
+        <Text style={styles.cell}>{item.platform}</Text>
+        <Text style={styles.cell}>{item.price}</Text>
+        <TouchableOpacity onPress={() => Linking.openURL(item.url)}>
+          <Text style={[styles.cell, styles.linkText]}>View</Text>
+        </TouchableOpacity>
+      </View>
+    ))}
+  </View>
+) : (
+  <Text style={{ textAlign: 'center', marginTop: 10, color: '#999' }}>
+    No matching product found on Daraz.
+  </Text>
+)}
       </ScrollView>
 
       <TouchableOpacity style={styles.chatBtn}>
@@ -97,19 +159,25 @@ export default function SellToyResultScreen() {
       </TouchableOpacity>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/dashboard')}>
-          <Image source={require('../../assets/icons/home.png')} style={styles.footerIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem}>
-          <Image source={require('../../assets/icons/upload.png')} style={styles.footerIconupload} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem}>
-          <Image source={require('../../assets/icons/message.png')} style={styles.footerIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/ProfileScreen')}>
-          <Image source={require('../../assets/icons/profile.png')} style={styles.footerIconprofile} />
-        </TouchableOpacity>
-      </View>
+                    <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/dashboard')}>
+                      <Image source={require('../../assets/icons/home.png')} style={styles.footerIcon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.footerItem} onPress={() => setSheetVisible(true)}>
+                      <Image source={require('../../assets/icons/upload.png')} style={styles.footerIconupload} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.footerItem}>
+                      <Image source={require('../../assets/icons/message.png')} style={styles.footerIcon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/ProfileScreen')}>
+                      <Image source={require('../../assets/icons/profile.png')} style={styles.footerIconprofile} />
+                    </TouchableOpacity>
+                  </View>
+            
+                  <UploadOptionsSheet
+                    visible={sheetVisible}
+                    onClose={() => setSheetVisible(false)}
+                    onSelect={handleOptionSelect}
+                  />
     </View>
   );
 }
@@ -273,4 +341,30 @@ const styles = StyleSheet.create({
     width: 16,
     height: 23,
   },
+    table: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  headerRow: {
+    backgroundColor: '#FFF1C4',
+  },
+  cell: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 12,
+  },
+  linkText: {
+    color: 'blue',
+    textDecorationLine: 'underline',
+  },
+
 });

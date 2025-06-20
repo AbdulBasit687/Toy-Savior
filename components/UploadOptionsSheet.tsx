@@ -49,9 +49,6 @@ export default function UploadOptionsSheet({ visible, onClose, onSelect, selecte
               >
                 {item.label}
               </Text>
-              {current === item.key && (
-                <Ionicons name="checkmark" size={20} color="#fff" />
-              )}
             </TouchableOpacity>
           ))}
         </View>
@@ -85,7 +82,7 @@ const styles = StyleSheet.create({
     fontFamily: 'BalooTammudu2-SemiBold',
   },
   optionButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F4B731',
     borderRadius: 30,
     paddingVertical: 14,
     paddingHorizontal: 20,

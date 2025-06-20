@@ -7,6 +7,8 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -57,6 +59,7 @@ export default function ProfileScreen() {
             email: data?.email || '',
             photoURL: data?.photoURL || '',
           });
+          setRole(data?.role || ''); // ✅ Add this line here
         }
       }
     } catch (error) {
@@ -65,19 +68,8 @@ export default function ProfileScreen() {
   };
 
   useEffect(() => {
-  const fetchUserData = async () => {
-    const currentUser = auth().currentUser;
-    if (!currentUser) return;
-
-    const doc = await firestore().collection('users').doc(currentUser.uid).get();
-    if (doc.exists) {
-      const data = doc.data();
-      setUserInfo(data);
-      setRole(data?.role || ''); // ✅ Add this line here
-    }
-  };
-  fetchUserData();
-}, []);
+    fetchUserData();
+  }, []);
 
   const handlePickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -136,57 +128,73 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Image
-          source={
-            userInfo.photoURL
-              ? { uri: userInfo.photoURL }
-              : require('../../assets/images/default-avatar.png')
-          }
-          style={styles.avatar}
-        />
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1, // Ensures the content grows to fill space
+          justifyContent: 'flex-start', // Align content to the top
+          paddingBottom: 90, // Adjusted to ensure enough space at the bottom
+        }}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.container}>
+          <Image
+            source={
+              userInfo.photoURL
+                ? { uri: userInfo.photoURL }
+                : require('../../assets/images/default-avatar.png')
+            }
+            style={styles.avatar}
+          />
+          <TouchableOpacity onPress={handlePickImage}>
+            <Text style={styles.addPhotoText}>+ Add Profile Photo</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity onPress={handlePickImage}>
-          <Text style={styles.addPhotoText}>+ Add Profile Photo</Text>
-        </TouchableOpacity>
+          <View style={styles.card}>
+            <Text style={styles.name}>
+              {userInfo.firstName} {userInfo.lastName}
+            </Text>
+            <Text style={styles.email}>{userInfo.email}</Text>
+          </View>
 
-        <View style={styles.card}>
-          <Text style={styles.name}>{userInfo.firstName} {userInfo.lastName}</Text>
-          <Text style={styles.email}>{userInfo.email}</Text>
+          <View style={styles.options}>
+            <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/EditProfile')}>
+              <Text style={styles.optionText}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/Conditions')}>
+              <Text style={styles.optionText}>Conditions</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/Feedback')}>
+              <Text style={styles.optionText}>Feedback</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/Help')}>
+              <Text style={styles.optionText}>Help</Text>
+            </TouchableOpacity>
+
+            {/* Reduced space between My Requests and Logout */}
+            <TouchableOpacity style={[styles.option, { marginBottom: 10 }]} onPress={() => router.push('../screens/MyRequestsScreen')}>
+              <Text style={styles.optionText}>My Requests</Text>
+            </TouchableOpacity>
+          </View>
+
+          {role === 'repairer' && (
+            <TouchableOpacity style={styles.switchButton} onPress={() => router.push('/repairer-dashboard')}>
+              <Text style={styles.switchButtonText}>Return to Repairer Mode</Text>
+            </TouchableOpacity>
+          )}
         </View>
-
-        <View style={styles.options}>
-          <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/EditProfile')}>
-            <Text style={styles.optionText}>Edit Profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/Conditions')}>
-            <Text style={styles.optionText}>Conditions</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/Feedback')}>
-            <Text style={styles.optionText}>Feedback</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/Help')}>
-            <Text style={styles.optionText}>Help</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.option} onPress={() => router.push('../screens/MyRequestsScreen')}>
-  <Text style={styles.optionText}>My Requests</Text>
-</TouchableOpacity>
-
-        </View>
-        {role === 'repairer' && (
-  <TouchableOpacity
-    style={styles.switchButton}
-    onPress={() => router.push('/repairer-dashboard')}
-  >
-    <Text style={styles.switchButtonText}>Return to Repairer Mode</Text>
-  </TouchableOpacity>
-)}
-
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Log out</Text>
-        </TouchableOpacity>
       </ScrollView>
+
+      {/* Move logout button a little more upwards */}
+      <TouchableOpacity
+        style={[styles.logoutButton, { marginBottom: 10 }]} // Reduced marginBottom to move it up
+        onPress={handleLogout}
+      >
+        <Text style={styles.logoutText}>Log out</Text>
+      </TouchableOpacity>
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/dashboard')}>
@@ -208,13 +216,13 @@ export default function ProfileScreen() {
         onClose={() => setSheetVisible(false)}
         onSelect={handleOptionSelect}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 50,
+    paddingTop: 30,  // Adjusted to move content upward
     padding: 24,
     alignItems: 'center',
     backgroundColor: '#f2f2f2',
@@ -271,6 +279,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 25,
+    marginBottom: 10, // Adjusted margin for more space upwards
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
   },
   logoutText: {
     color: '#000',
@@ -311,17 +325,15 @@ const styles = StyleSheet.create({
     height: 23,
   },
   switchButton: {
- backgroundColor: "#F4B731",
+    backgroundColor: '#F4B731',
     padding: 14,
     borderRadius: 30,
-    alignItems: "center",
+    alignItems: 'center',
     marginTop: 10,
-},
-
-switchButtonText: {
-  fontWeight: "bold",
+  },
+  switchButtonText: {
+    fontWeight: 'bold',
     fontSize: 16,
-    fontFamily: "ABeeZee-Regular",
-},
-
+    fontFamily: 'ABeeZee-Regular',
+  },
 });

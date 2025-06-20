@@ -123,6 +123,7 @@ export default function SellToy() {
         userEmail: userInfo.email,
         image: imageUrl,
         category: 'Newly Uploaded',
+        categoryType: toyType,  
         createdAt: firestore.FieldValue.serverTimestamp(),
       };
 
@@ -203,7 +204,7 @@ export default function SellToy() {
         </TouchableOpacity>
         {showCategoryDropdown && (
           <View style={styles.dropdownList}>
-            {["0-5 years", "6-10 years", "11-15 years", "16-20 years", "Drone", "Console"].map((type) => (
+            {["0-5 years", "6-10 years", "11-15 years", "Drone", "Console"].map((type) => (
               <TouchableOpacity
                 key={type}
                 onPress={() => {
@@ -277,6 +278,27 @@ export default function SellToy() {
           </View>
         </View>
       </Modal>
+      <View style={styles.footer}>
+              <TouchableOpacity style={styles.footerItem}>
+                <Image source={require('../../assets/icons/home.png')} style={styles.footerIcon} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.footerItem} onPress={() => setSheetVisible(true)}>
+                <Image source={require('../../assets/icons/upload.png')} style={styles.footerIconupload} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/MessageList')}>
+                <Ionicons name="chatbubble-ellipses-outline" size={28} color="#333" 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/ProfileScreen')}>
+                <Image source={require('../../assets/icons/profile.png')} style={styles.footerIconprofile} />
+              </TouchableOpacity>
+            </View>
+      
+            <UploadOptionsSheet
+              visible={sheetVisible}
+              onClose={() => setSheetVisible(false)}
+              onSelect={handleOptionSelect}
+            />
     </View>
   );
 }
@@ -438,5 +460,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
     borderRadius: 10,
     marginBottom: 14,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingBottom: 40,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    zIndex: 999,
+  },
+  footerItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerIcon: {
+    width: 24,
+    height: 24,
+  },
+  footerIconupload: {
+    width: 20,
+    height: 23,
+  },
+  footerIconprofile: {
+    width: 16,
+    height: 23,
   },
 });

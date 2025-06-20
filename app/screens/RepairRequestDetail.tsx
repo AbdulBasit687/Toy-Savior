@@ -88,6 +88,13 @@ export default function RepairRequestDetail() {
 
         {/* Toy Name */}
         <Text style={styles.toyName}>{parsedData.toyName}</Text>
+        {/* Proposed Price */}
+        {parsedData.priceRange && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Proposed Price</Text>
+            <Text style={styles.sectionText}>Rs. {parsedData.priceRange}</Text>
+          </View>
+        )}
 
         {/* Category */}
         <View style={styles.infoBoxGray}>
@@ -100,6 +107,18 @@ export default function RepairRequestDetail() {
           <Text style={styles.infoLabelBlack}>Urgency Of Repair</Text>
           <Text style={styles.infoValueBold}>{parsedData.urgency}</Text>
         </View>
+        {/* Area */}
+        {parsedData.area && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Area</Text>
+            <Text style={styles.sectionText}>{parsedData.area}</Text>
+          </View>
+        )}
+        {/* Location */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Location</Text>
+          <Text style={styles.sectionText}>{parsedData.location || "N/A"}</Text>
+        </View>
 
         {/* Description */}
         <View style={styles.section}>
@@ -107,18 +126,9 @@ export default function RepairRequestDetail() {
           <Text style={styles.sectionText}>{parsedData.description}</Text>
         </View>
 
-        {/* Location */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Location</Text>
-          <Text style={styles.sectionText}>
-            Muhammad Ali Jinah Rd, Gazdarabad Preedy Quarters, Karachi, Karachi
-            City, Sindh, Pakistan
-          </Text>
-        </View>
-
-        {/* Chat with User Button */}
-        <TouchableOpacity style={styles.chatButton} onPress={handleChatPress}>
-          <Text style={styles.chatButtonText}>Chat with Owner</Text>
+        {/* Send Request Button (optional action) */}
+        <TouchableOpacity style={styles.submitButton} onPress={handleChatPress}>
+          <Text style={styles.submitText}>Send Request</Text>
         </TouchableOpacity>
       </ScrollView>
       <View style={styles.footer}>

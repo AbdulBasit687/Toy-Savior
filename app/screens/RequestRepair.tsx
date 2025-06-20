@@ -31,6 +31,9 @@ export default function RequestRepair() {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showUrgencyDropdown, setShowUrgencyDropdown] = useState(false);
   const [docId, setDocId] = useState('');
+  const [area, setArea] = useState('');
+const [location, setLocation] = useState('');
+const [priceRange, setPriceRange] = useState('');
 
   const { editData } = useLocalSearchParams();
 
@@ -43,6 +46,9 @@ export default function RequestRepair() {
     setToyType(parsed.toyType || '');
     setImageUri(parsed.imageUrl || '');
     setDocId(parsed.docId || '');
+    setArea(parsed.area || '');
+setLocation(parsed.location || '');
+setPriceRange(parsed.priceRange || '');
   }
 }, []);
 
@@ -108,6 +114,9 @@ export default function RequestRepair() {
         urgency,
         toyType,
         imageUrl,
+        area,
+        location,
+        priceRange,
         userId: currentUser?.uid,
         createdAt: firestore.FieldValue.serverTimestamp(),
       };
@@ -162,6 +171,14 @@ export default function RequestRepair() {
           value={toyName}
           onChangeText={setToyName}
         />
+        <Text style={styles.label}>Proposed Price Range</Text>
+        <TextInput
+  placeholder="e.g: 1200 - 1700"
+  style={styles.input}
+  //keyboardType="numeric"
+  value={priceRange}
+  onChangeText={setPriceRange}
+/>
 
         <Text style={styles.label}>Category</Text>
         <TouchableOpacity onPress={() => setShowCategoryDropdown(!showCategoryDropdown)} style={styles.dropdownBox}>
@@ -206,6 +223,27 @@ export default function RequestRepair() {
             ))}
           </View>
         )}
+        <Text style={styles.label}>Area</Text>
+        <View style={styles.rowInputs}>
+  <View style={[styles.input, styles.areaInput]}>
+    <Ionicons name="location" size={16} color="#555" style={{ marginRight: 6 }} />
+    <TextInput
+      placeholder="Area"
+      value={area}
+      onChangeText={setArea}
+      style={{ flex: 1 }}
+    />
+  </View>
+</View>
+
+
+<Text style={styles.label}>Location</Text>
+<TextInput
+  placeholder="Full Location (address or landmark)"
+  style={styles.input}
+  value={location}
+  onChangeText={setLocation}
+/>
 
         <Text style={styles.label}>Description</Text>
         <TextInput
@@ -439,5 +477,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     fontFamily: 'ABeeZee-Regular',
+  },
+  rowInputs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  areaInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    flex: 1,
   },
 });

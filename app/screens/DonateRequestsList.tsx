@@ -4,12 +4,12 @@ import firestore from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function DonateRequestsList() {
@@ -51,8 +51,7 @@ export default function DonateRequestsList() {
        router.push({
   pathname: '/screens/DonateToyResultScreen',
   params: {
-    data: JSON.stringify({ ...item, docId: item.id }),
-    from: 'view', // ✅ Now correct
+    data: JSON.stringify({ ...item, docId: item.id, fromCategory: true }),
   },
 })
       }
@@ -136,7 +135,7 @@ const styles = StyleSheet.create({
   card: {
     width: 161,
     height: 281,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5',
     margin: '3%',
     borderRadius: 12,
     overflow: 'hidden',

@@ -108,7 +108,7 @@ const handleReject = async (requestId: string) => {
                 <Text style={styles.cardDesc} numberOfLines={2}>{item.description} <Text style={styles.seeMore}>See More</Text></Text>
                 <Text style={styles.uploadedBy}>Uploaded By : <Text style={styles.cardDesc}>{item.userName || 'Unknown'}</Text></Text>
                 <Text style={styles.metaText}>
-  🕒 {dayjs(item.createdAt?.toDate?.()).fromNow()} – Downtown Tech Hub
+  🕒 {dayjs(item.createdAt?.toDate?.()).fromNow()} – {item.area || 'Unknown Area'}
 </Text>
               </View>
             </View>
@@ -134,16 +134,16 @@ const handleReject = async (requestId: string) => {
         ))}
       </ScrollView>
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerItem} >
-                  <Image source={require('../assets/icons/home.png')} style={styles.footerIcon} />
-                </TouchableOpacity>
-<TouchableOpacity style={styles.footerItem}>
-          <Image source={require('../assets/icons/message.png')} style={styles.footerIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem} onPress={() => router.push('../screens/RepairerProfile')}>
-                  <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
-                </TouchableOpacity>
-      </View>
+  <TouchableOpacity style={styles.footerItem}>
+    <Image source={require('../assets/icons/home.png')} style={styles.footerIcon} />
+  </TouchableOpacity>
+  <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/MessageListRepairer')}>
+    <Image source={require('../assets/icons/message.png')} style={styles.footerIcon} />
+  </TouchableOpacity>
+  <TouchableOpacity style={styles.footerItem} onPress={() => router.push('../screens/RepairerProfile')}>
+    <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
+  </TouchableOpacity>
+</View>
     </View>
   );
 }
