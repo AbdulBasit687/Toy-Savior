@@ -3,13 +3,14 @@ import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
 import {
   Bubble,
   GiftedChat,
   IMessage,
   InputToolbar,
 } from "react-native-gifted-chat";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface OtherUser {
   firstName: string;
@@ -23,6 +24,7 @@ const ChatScreen = () => {
   // Get route params using Expo Router
   const params = useLocalSearchParams();
   const chatId = params.chatId as string;
+  const initialMessage = params.initialMessage as string | undefined;
 
   // Use useMemo to avoid re-parsing on every render
   const otherUser = useMemo(() => {
@@ -76,6 +78,19 @@ const ChatScreen = () => {
     return unsubscribe;
   }, [chatId, currentUser, otherUser]);
 
+  // Reference to keep track of whether we've already set the initial message
+  const initialMessageRef = React.useRef(false);
+
+  // Set initial message text if provided and not already set
+  useEffect(() => {
+    if (initialMessage && currentUser && !initialMessageRef.current) {
+      // Mark that we've handled the initial message
+      initialMessageRef.current = true;
+
+      // We'll do this in the render part with the initialText prop
+    }
+  }, [initialMessage, currentUser]);
+
   const onSend = useCallback(
     async (newMessages: IMessage[] = []) => {
       const message = newMessages[0];
@@ -122,7 +137,7 @@ const ChatScreen = () => {
         {...props}
         wrapperStyle={{
           right: {
-            backgroundColor: "#007AFF",
+            backgroundColor: "#F4B831",
           },
           left: {
             backgroundColor: "#E5E5EA",
@@ -145,7 +160,7 @@ const ChatScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <GiftedChat
         messages={messages}
         onSend={(messages) => onSend(messages)}
@@ -155,9 +170,10 @@ const ChatScreen = () => {
         renderBubble={renderBubble}
         renderInputToolbar={renderInputToolbar}
         placeholder="Type a message..."
+        text={initialMessageRef.current ? initialMessage : undefined}
         alwaysShowSend
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -172,7 +188,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dummyButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#F4B831",
     marginHorizontal: 16,
     marginVertical: 12,
     paddingVertical: 12,
@@ -204,7 +220,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#F4B831",
     justifyContent: "center",
     alignItems: "center",
   },

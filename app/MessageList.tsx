@@ -14,12 +14,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { createDummyChat } from "../utils/chatUtils"; // Adjust the import path as needed
 
 interface Chat {
   id: string;
   participants: string[];
-  participantDetails: Record<string, ParticipantDetail>;
+  participantDetails?: Record<string, ParticipantDetail>;
   lastMessage?: {
     text: string;
     timestamp: FirebaseFirestoreTypes.Timestamp;
@@ -67,9 +68,9 @@ const ChatListScreen = () => {
   }, [currentUser]);
 
   const getOtherParticipant = (
-    participantDetails: Record<string, ParticipantDetail>
+    participantDetails: Record<string, ParticipantDetail> | undefined
   ): ParticipantDetail => {
-    if (!currentUser) return {} as ParticipantDetail;
+    if (!currentUser || !participantDetails) return {} as ParticipantDetail;
 
     const otherUid = Object.keys(participantDetails).find(
       (uid) => uid !== currentUser.uid
@@ -178,9 +179,9 @@ const ChatListScreen = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Create Dummy Chat Button */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.dummyButton}
         onPress={handleCreateDummyChat}
         disabled={loading}
@@ -188,7 +189,7 @@ const ChatListScreen = () => {
         <Text style={styles.dummyButtonText}>
           {loading ? "Creating..." : "Create Dummy Chat (Khalid ↔ Sarim)"}
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <FlatList
         data={chats}
@@ -206,7 +207,7 @@ const ChatListScreen = () => {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
