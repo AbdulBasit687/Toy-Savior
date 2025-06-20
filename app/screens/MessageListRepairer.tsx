@@ -1,19 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
 import auth from "@react-native-firebase/auth";
 import firestore, { FirebaseFirestoreTypes } from "@react-native-firebase/firestore";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { createDummyChat } from "../utils/chatUtils";
+import { createDummyChat } from "../../utils/chatUtils";
 
 interface Chat {
   id: string;
@@ -38,7 +37,6 @@ const ChatListScreen = () => {
   const router = useRouter();
   const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
-    const [sheetVisible, setSheetVisible] = useState(false);
   const currentUser = auth().currentUser;
 
   useEffect(() => {
@@ -234,18 +232,14 @@ const ChatListScreen = () => {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerItem}>
-          <Image source={require('../assets/icons/home.png')} style={styles.footerIcon} />
+        <TouchableOpacity style={styles.footerButton} onPress={() => router.push('/dashboard')}>
+          <Text style={styles.footerButtonText}>Dashboard</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem} onPress={() => setSheetVisible(true)}>
-          <Image source={require('../assets/icons/upload.png')} style={styles.footerIconupload} />
+        <TouchableOpacity style={styles.footerButton} onPress={() => router.push('/profile')}>
+          <Text style={styles.footerButtonText}>Profile</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/MessageList')}>
-          <Ionicons name="chatbubble-ellipses-outline" size={28} color="#333" 
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/ProfileScreen')}>
-          <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
+        <TouchableOpacity style={styles.footerButton} onPress={() => router.push('/settings')}>
+          <Text style={styles.footerButtonText}>Settings</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -330,35 +324,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingBottom: 40,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    zIndex: 999,
+    borderTopColor: "#E5E5EA",
   },
-  footerItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  footerButton: {
+    padding: 10,
   },
-  footerIcon: {
-    width: 24,
-    height: 24,
-  },
-  footerIconupload: {
-    width: 20,
-    height: 23,
-  },
-  footerIconprofile: {
-    width: 16,
-    height: 23,
+  footerButtonText: {
+    fontSize: 14,
+    color: "#F4B831",
   },
 });

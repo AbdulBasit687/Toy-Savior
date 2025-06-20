@@ -134,16 +134,16 @@ const handleReject = async (requestId: string) => {
         ))}
       </ScrollView>
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerItem} >
-                  <Image source={require('../assets/icons/home.png')} style={styles.footerIcon} />
-                </TouchableOpacity>
-<TouchableOpacity style={styles.footerItem}>
-          <Image source={require('../assets/icons/message.png')} style={styles.footerIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerItem} onPress={() => router.push('../screens/RepairerProfile')}>
-                  <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
-                </TouchableOpacity>
-      </View>
+  <TouchableOpacity style={styles.footerItem}>
+    <Image source={require('../assets/icons/home.png')} style={styles.footerIcon} />
+  </TouchableOpacity>
+  <TouchableOpacity style={styles.footerItem} onPress={() => router.push('/screens/MessageListRepairer')}>
+    <Image source={require('../assets/icons/message.png')} style={styles.footerIcon} />
+  </TouchableOpacity>
+  <TouchableOpacity style={styles.footerItem} onPress={() => router.push('../screens/RepairerProfile')}>
+    <Image source={require('../assets/icons/profile.png')} style={styles.footerIconprofile} />
+  </TouchableOpacity>
+</View>
     </View>
   );
 }
